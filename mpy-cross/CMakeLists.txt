@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR .. ABSOLUTE)
-message(WARNING "MICROPY_DIR=${MICROPY_DIR}")
-message(WARNING "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}")
+#message(WARNING "MICROPY_DIR=${MICROPY_DIR}")
+#message(WARNING "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}")
 
 project(mpy-cross)
 
