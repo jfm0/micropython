@@ -79,7 +79,7 @@ add_custom_command(
 add_custom_command(
     OUTPUT ${MICROPY_QSTR_DEFS_SPLIT}
     COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makeqstrdefs.py split qstr ${MICROPY_GENHDR_DIR}/qstr.i.last ${MICROPY_GENHDR_DIR}/qstr _
-    COMMAND touch ${MICROPY_QSTR_DEFS_SPLIT}
+    COMMAND ${CMAKE_COMMAND} -E touch ${MICROPY_QSTR_DEFS_SPLIT}
     DEPENDS ${MICROPY_QSTR_DEFS_LAST}
     VERBATIM
 )
@@ -91,9 +91,13 @@ add_custom_command(
     VERBATIM
 )
 
+file(WRITE ${MICROPY_GENHDR_DIR}/sed_filter1 "s/^Q(.*)/\"&\"/")
+file(WRITE ${MICROPY_GENHDR_DIR}/sed_filter2 "s/^\\\"\\(Q(.*)\\)\\\"/\\1/")
+#todo change to use ${CMAKE_COMMAND} -E cat (after cmake 3.18)
 add_custom_command(
     OUTPUT ${MICROPY_QSTR_DEFS_PREPROCESSED}
-    COMMAND cat ${MICROPY_PY_QSTRDEFS} ${MICROPY_QSTR_DEFS_COLLECTED} | sed "s/^Q(.*)/\"&\"/" | ${CMAKE_C_COMPILER} -E ${MICROPY_CPP_FLAGS} - | sed "s/^\\\"\\(Q(.*)\\)\\\"/\\1/" > ${MICROPY_QSTR_DEFS_PREPROCESSED}
+    COMMAND cat ${MICROPY_PY_QSTRDEFS} ${MICROPY_QSTR_DEFS_COLLECTED} | sed -f ${MICROPY_GENHDR_DIR}/sed_filter1 > ${MICROPY_GENHDR_DIR}/cat_qstrdefs_collected.h
+    COMMAND ${CMAKE_C_COMPILER} -E ${MICROPY_CPP_FLAGS} ${MICROPY_GENHDR_DIR}/cat_qstrdefs_collected.h | sed -f ${MICROPY_GENHDR_DIR}/sed_filter2 > ${MICROPY_QSTR_DEFS_PREPROCESSED}
     DEPENDS ${MICROPY_QSTR_DEFS_COLLECTED}
     VERBATIM
 )

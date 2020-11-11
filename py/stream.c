@@ -26,7 +26,10 @@
  */
 
 #include <string.h>
+#include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "py/objstr.h"
 #include "py/stream.h"

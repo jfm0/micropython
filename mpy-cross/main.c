@@ -27,7 +27,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#define STDERR_FILENO stderr
+#else
 #include <unistd.h>
+#endif
 
 #include "py/compile.h"
 #include "py/persistentcode.h"
