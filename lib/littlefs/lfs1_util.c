@@ -9,6 +9,9 @@
 // Only compile if user does not provide custom config
 #ifndef LFS1_CONFIG
 
+#ifdef _MSC_VER
+#define restrict __restrict
+#endif
 
 // Software CRC implementation with small lookup table
 void lfs1_crc(uint32_t *restrict crc, const void *buffer, size_t size) {

@@ -5,8 +5,8 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
-set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
-set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/variants/manifest.py)
+#set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
+set(MICROPY_FROZEN_MANIFEST ${MICROPY_DIR}/ports/unix/variants/manifest.py)
 
 #=========================================================================
 # Include core source components.
@@ -34,10 +34,10 @@ set(MICROPY_PY_BTREE, 1)
 set(MICROPY_PY_THREAD, 1)
 
 # Subset of CPython termios module
-set(MICROPY_PY_TERMIOS, 1)
+set(MICROPY_PY_TERMIOS, 0)
 
 # Subset of CPython socket module
-set(MICROPY_PY_SOCKET, 1)
+set(MICROPY_PY_SOCKET, 0)
 
 # ffi module requires libffi (libffi-dev Debian package)
 set(MICROPY_PY_FFI, 1)
@@ -60,8 +60,8 @@ set(MICROPY_STANDALONE, 0)
 #=========================================================================
 target_compile_definitions(${MICROPY_TARGET} PUBLIC
         MICROPY_USE_READLINE=1
-        MICROPY_PY_TERMIOS=1
-        MICROPY_PY_SOCKET=1
+        MICROPY_PY_TERMIOS=0
+        MICROPY_PY_SOCKET=0
         MICROPY_PY_THREAD=1
         MICROPY_PY_THREAD_GIL=0
         MPZ_DIG_SIZE=16
@@ -88,6 +88,7 @@ set(MICROPY_SOURCE_LIB
     #${MICROPY_DIR}/lib/utils/sys_stdio_mphal.c
     #${MICROPY_DIR}/lib/utils/pyexec.c
     ${MICROPY_DIR}/lib/utils/gchelper_generic.c
+    ${MICROPY_DIR}/lib/utils/printf.c
 )
 
 set(MICROPY_SOURCE_DRIVERS
@@ -96,25 +97,33 @@ set(MICROPY_SOURCE_DRIVERS
 )
 
 set(MICROPY_SOURCE_PORT
-    ${PROJECT_DIR}/main.c
-    ${PROJECT_DIR}/gccollect.c
-    ${PROJECT_DIR}/unix_mphal.c
-    ${PROJECT_DIR}/mpthreadport.c
-    ${PROJECT_DIR}/input.c
-    ${PROJECT_DIR}/modmachine.c
-    ${PROJECT_DIR}/modos.c
-    ${PROJECT_DIR}/moduos_vfs.c
-    ${PROJECT_DIR}/modtime.c
-    ${PROJECT_DIR}/moduselect.c
-    ${PROJECT_DIR}/alloc.c
-    ${PROJECT_DIR}/fatfs_port.c
-    ${PROJECT_DIR}/mpbthciport.c
-    ${PROJECT_DIR}/mpbtstackport_common.c
-    ${PROJECT_DIR}/mpbtstackport_h4.c
-    ${PROJECT_DIR}/mpbtstackport_usb.c
-    ${PROJECT_DIR}/mpnimbleport.c
-    ${PROJECT_DIR}/modusocket.c
-    ${PROJECT_DIR}/modtermios.c
+    # ==================== windows specific
+    ${MICROPY_DIR}/ports/windows/windows_mphal.c
+    ${MICROPY_DIR}/ports/windows/realpath.c
+    ${MICROPY_DIR}/ports/windows/init.c
+    ${MICROPY_DIR}/ports/windows/sleep.c
+    ${MICROPY_DIR}/ports/windows/fmode.c
+    ${MICROPY_DIR}/ports/windows/msvc/dirent.c
+    # ==================== unix
+    ${MICROPY_DIR}/ports/unix/main.c
+    ${MICROPY_DIR}/ports/unix/gccollect.c
+    ${MICROPY_DIR}/ports/unix/input.c
+    ${MICROPY_DIR}/ports/unix/modmachine.c
+    ${MICROPY_DIR}/ports/unix/modos.c
+    ${MICROPY_DIR}/ports/unix/modtime.c
+
+    ${MICROPY_DIR}/ports/unix/mpthreadport.c
+    ${MICROPY_DIR}/ports/unix/moduos_vfs.c
+    ${MICROPY_DIR}/ports/unix/moduselect.c
+    #${MICROPY_DIR}/ports/unix/alloc.c
+    ${MICROPY_DIR}/ports/unix/fatfs_port.c
+    # ${MICROPY_DIR}/ports/unix/mpbthciport.c
+    # ${MICROPY_DIR}/ports/unix/mpbtstackport_common.c
+    # ${MICROPY_DIR}/ports/unix/mpbtstackport_h4.c
+    # ${MICROPY_DIR}/ports/unix/mpbtstackport_usb.c
+    # ${MICROPY_DIR}/ports/unix/mpnimbleport.c
+    # ${MICROPY_DIR}/ports/unix/modusocket.c
+    # ${MICROPY_DIR}/ports/unix/modtermios.c
 )
 
 set(MICROPY_SOURCE_QSTR
@@ -270,7 +279,7 @@ set(LVGL_SOURCES
     ${LVGL_BINDINGS_DIR}/driver/SDL/modSDL.c
     ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_monitor.c
     ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_mouse.c
-    ${LVGL_BINDINGS_DIR}/driver/linux/modfb.c
+    #${LVGL_BINDINGS_DIR}/driver/linux/modfb.c
     ${LVGL_BINDINGS_DIR}/driver/generic/modlvindev.c
 #============== lodepng ========================
     # ${LODEPNG_MPY_C_FILE}
@@ -440,9 +449,11 @@ target_include_directories(${MICROPY_TARGET}
     PRIVATE 
         ${MICROPY_DIR}
         ${MICROPY_PORT_DIR}
-        ${MICROPY_BOARD_DIR}
+        #${MICROPY_BOARD_DIR}
         ${CMAKE_BINARY_DIR}
         ${LVGL_INCLUDES}
+        ${MICROPY_DIR}/ports/unix
+        ${MICROPY_DIR}/ports/windows/msvc
 )
 
 # Set the MicroPython target as the current (main) IDF component target.
@@ -475,9 +486,9 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
 
 # Disable some warnings to keep the build output clean.
 target_compile_options(${MICROPY_TARGET} PUBLIC
-    -Wno-clobbered
-    -Wno-deprecated-declarations
-    -Wno-missing-field-initializers
+    #-Wno-clobbered
+    #-Wno-deprecated-declarations
+    #-Wno-missing-field-initializers
 )
 if(${LVGL_BINDING})
 add_dependencies(${MICROPY_TARGET} GenLvglBinding) #GenLodepngBinding
@@ -488,12 +499,24 @@ endif()
 #=========================================================================
 
 find_package(SDL2 REQUIRED)
+#message(WARNING "SDL2_INCLUDE_DIRS=${SDL2_INCLUDE_DIRS}")
 include_directories(${SDL2_INCLUDE_DIRS})
 target_link_libraries(${MICROPY_TARGET} ${SDL2_LIBRARIES})
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-target_link_libraries(${MICROPY_TARGET} Threads::Threads)
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
+# find_package(Threads REQUIRED)
+# target_link_libraries(${MICROPY_TARGET} Threads::Threads)
+find_package(pthreads REQUIRED)
+message(WARNING "PTHREAD_INCLUDE_DIRS=${PTHREAD_INCLUDE_DIRS}")
+message(WARNING "PTHREAD_LIBRARIES=${PTHREAD_LIBRARIES}")
+message(WARNING "PTHREAD_DEFINITIONS=${PTHREAD_DEFINITIONS}")
+message(WARNING "CMAKE_CL_64=${CMAKE_CL_64}")
+
+include_directories(${PTHREAD_INCLUDE_DIRS})
+target_link_libraries(${MICROPY_TARGET} ${PTHREAD_LIBRARIES})
+target_compile_definitions(${MICROPY_TARGET} PUBLIC
+    ${PTHREAD_DEFINITIONS}
+)
 
 include(CheckLibraryExists)
 check_library_exists(m pow "" LIBM) # math library

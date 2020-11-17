@@ -31,6 +31,11 @@
 #define MICROPY_USE_READLINE        (1)
 #endif
 
+#define MICROPY_FATFS_ENABLE_LFN       (1)
+#define MICROPY_FATFS_RPATH            (2)
+#define MICROPY_FATFS_MAX_SS           (4096)
+#define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+
 #define MICROPY_ALLOC_PATH_MAX      (260) // see minwindef.h for msvc or limits.h for mingw
 #define MICROPY_PERSISTENT_CODE_LOAD (1)
 #define MICROPY_EMIT_X64            (0)

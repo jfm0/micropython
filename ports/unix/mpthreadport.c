@@ -85,6 +85,7 @@ void mp_thread_unix_end_atomic_section(void) {
     pthread_mutex_unlock(&thread_mutex);
 }
 
+#ifndef _WIN32
 // this signal handler is used to scan the regs and stack of a thread
 STATIC void mp_thread_gc(int signo, siginfo_t *info, void *context) {
     (void)info; // unused
@@ -106,6 +107,7 @@ STATIC void mp_thread_gc(int signo, siginfo_t *info, void *context) {
         #endif
     }
 }
+#endif
 
 void mp_thread_init(void) {
     pthread_key_create(&tls_key, NULL);
@@ -132,12 +134,14 @@ void mp_thread_init(void) {
     sem_init(&thread_signal_done, 0, 0);
     #endif
 
+#ifndef _WIN32
     // enable signal handler for garbage collection
     struct sigaction sa;
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = mp_thread_gc;
     sigemptyset(&sa.sa_mask);
     sigaction(MP_THREAD_GC_SIGNAL, &sa, NULL);
+#endif
 }
 
 void mp_thread_deinit(void) {
@@ -153,7 +157,7 @@ void mp_thread_deinit(void) {
     sem_close(thread_signal_done_p);
     sem_unlink(thread_signal_done_name);
     #endif
-    assert(thread->id == pthread_self());
+    assert(pthread_equal(thread->id,pthread_self()));
     free(thread);
 }
 
@@ -167,13 +171,15 @@ void mp_thread_gc_others(void) {
     mp_thread_unix_begin_atomic_section();
     for (thread_t *th = thread; th != NULL; th = th->next) {
         gc_collect_root(&th->arg, 1);
-        if (th->id == pthread_self()) {
+        if (pthread_equal(th->id, pthread_self())) {
             continue;
         }
         if (!th->ready) {
             continue;
         }
+#ifndef _WIN32
         pthread_kill(th->id, MP_THREAD_GC_SIGNAL);
+#endif
         #if defined(__APPLE__)
         sem_wait(thread_signal_done_p);
         #else
@@ -195,7 +201,7 @@ void mp_thread_start(void) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     mp_thread_unix_begin_atomic_section();
     for (thread_t *th = thread; th != NULL; th = th->next) {
-        if (th->id == pthread_self()) {
+        if (pthread_equal(th->id,pthread_self())) {
             th->ready = 1;
             break;
         }
@@ -268,7 +274,7 @@ void mp_thread_finish(void) {
     mp_thread_unix_begin_atomic_section();
     thread_t *prev = NULL;
     for (thread_t *th = thread; th != NULL; th = th->next) {
-        if (th->id == pthread_self()) {
+        if (pthread_equal(th->id,pthread_self())) {
             if (prev == NULL) {
                 thread = th->next;
             } else {

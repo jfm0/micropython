@@ -68,9 +68,27 @@ static inline int msec_sleep_tv(struct timeval *tv) {
 
 STATIC mp_obj_t mod_time_time(void) {
     #if MICROPY_PY_BUILTINS_FLOAT
+#ifndef _WIN32
     struct timeval tv;
     gettimeofday(&tv, NULL);
     mp_float_t val = tv.tv_sec + (mp_float_t)tv.tv_usec / 1000000;
+#else
+    //https://stackoverflow.com/questions/20370920/convert-current-time-from-windows-to-unix-timestamp-in-c-or-c
+    const LONGLONG UNIX_TIME_START = 0x019DB1DED53E8000; //January 1, 1970 (start of Unix epoch) in "ticks"
+    const LONGLONG TICKS_PER_SECOND = 10000000; //a tick is 100ns
+
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft); //returns ticks in UTC
+
+    //Copy the low and high parts of FILETIME into a LARGE_INTEGER
+    //This is so we can access the full 64-bits as an Int64 without causing an alignment fault
+    LARGE_INTEGER li;
+    li.LowPart  = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+
+    //Convert ticks since 1/1/1970 into seconds
+    mp_float_t val = (mp_float_t)(li.QuadPart - UNIX_TIME_START) / TICKS_PER_SECOND;
+#endif
     return mp_obj_new_float(val);
     #else
     return mp_obj_new_int((mp_int_t)time(NULL));
