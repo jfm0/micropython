@@ -1,14 +1,75 @@
+cmake_minimum_required(VERSION 3.5)
+project(micropython)
+
+set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
-set(MICROPY_BOARD_DIR ${PROJECT_DIR}/boards/GENERIC)
+set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
+set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/variants/manifest.py)
 
+#=========================================================================
 # Include core source components.
+#=========================================================================
 include(${MICROPY_DIR}/py/py.cmake)
 include(${MICROPY_DIR}/extmod/extmod.cmake)
 
+add_executable(micropython)
+set(MICROPY_TARGET micropython)
+
+#=========================================================================
+# Enable/disable modules and 3rd-party libs to be included in interpreter
+# Build 32-bit binaries on a 64-bit host
+set(MICROPY_FORCE_32BIT 0)
+
+# This variable can take the following values:
+#  0 - no readline, just simple stdin input
+#  1 - use MicroPython version of readline
+set(MICROPY_USE_READLINE, 1)
+
+# btree module using Berkeley DB 1.xx
+set(MICROPY_PY_BTREE, 1)
+
+# _thread module using pthreads
+set(MICROPY_PY_THREAD, 1)
+
+# Subset of CPython termios module
+set(MICROPY_PY_TERMIOS, 1)
+
+# Subset of CPython socket module
+set(MICROPY_PY_SOCKET, 1)
+
+# ffi module requires libffi (libffi-dev Debian package)
+set(MICROPY_PY_FFI, 1)
+
+# ussl module requires one of the TLS libraries below
+set(MICROPY_PY_USSL, 1)
+# axTLS has minimal size but implements only a subset of modern TLS
+# functionality, so may have problems with some servers.
+set(MICROPY_SSL_AXTLS, 1)
+# mbedTLS is more up to date and complete implementation, but also
+# more bloated.
+set(MICROPY_SSL_MBEDTLS, 0)
+
+# jni module requires JVM/JNI
+set(MICROPY_PY_JNI, 0)
+
+# Avoid using system libraries, use copies bundled with MicroPython
+# as submodules (currently affects only libffi).
+set(MICROPY_STANDALONE, 0)
+#=========================================================================
+target_compile_definitions(${MICROPY_TARGET} PUBLIC
+        MICROPY_USE_READLINE=1
+        MICROPY_PY_TERMIOS=1
+        MICROPY_PY_SOCKET=1
+        MICROPY_PY_THREAD=1
+        MICROPY_PY_THREAD_GIL=0
+        MPZ_DIG_SIZE=16
+)
+
 set(MICROPY_SOURCE_EXTMOD_EXTRA
-    ${MICROPY_DIR}/extmod/modonewire.c
+#    ${MICROPY_DIR}/extmod/modonewire.c
+    ${MICROPY_DIR}/extmod/machine_pinbase.c
 )
 
 set(MICROPY_SOURCE_LIB
@@ -16,57 +77,44 @@ set(MICROPY_SOURCE_LIB
     ${MICROPY_DIR}/lib/littlefs/lfs1_util.c
     ${MICROPY_DIR}/lib/littlefs/lfs2.c
     ${MICROPY_DIR}/lib/littlefs/lfs2_util.c
-    ${MICROPY_DIR}/lib/mbedtls_errors/mp_mbedtls_errors.c
+    #${MICROPY_DIR}/lib/mbedtls_errors/mp_mbedtls_errors.c
     ${MICROPY_DIR}/lib/mp-readline/readline.c
     ${MICROPY_DIR}/lib/netutils/netutils.c
     ${MICROPY_DIR}/lib/oofatfs/ff.c
     ${MICROPY_DIR}/lib/oofatfs/ffunicode.c
     ${MICROPY_DIR}/lib/timeutils/timeutils.c
-    ${MICROPY_DIR}/lib/utils/interrupt_char.c
-    ${MICROPY_DIR}/lib/utils/stdout_helpers.c
-    ${MICROPY_DIR}/lib/utils/sys_stdio_mphal.c
-    ${MICROPY_DIR}/lib/utils/pyexec.c
+    #${MICROPY_DIR}/lib/utils/interrupt_char.c
+    #${MICROPY_DIR}/lib/utils/stdout_helpers.c
+    #${MICROPY_DIR}/lib/utils/sys_stdio_mphal.c
+    #${MICROPY_DIR}/lib/utils/pyexec.c
+    ${MICROPY_DIR}/lib/utils/gchelper_generic.c
 )
 
 set(MICROPY_SOURCE_DRIVERS
-    ${MICROPY_DIR}/drivers/bus/softspi.c
-    ${MICROPY_DIR}/drivers/dht/dht.c
+    #${MICROPY_DIR}/drivers/bus/softspi.c
+    #${MICROPY_DIR}/drivers/dht/dht.c
 )
 
 set(MICROPY_SOURCE_PORT
     ${PROJECT_DIR}/main.c
-    ${PROJECT_DIR}/uart.c
     ${PROJECT_DIR}/gccollect.c
-    ${PROJECT_DIR}/mphalport.c
-    ${PROJECT_DIR}/fatfs_port.c
-    ${PROJECT_DIR}/help.c
-    ${PROJECT_DIR}/modutime.c
-    ${PROJECT_DIR}/moduos.c
-    ${PROJECT_DIR}/machine_timer.c
-    ${PROJECT_DIR}/machine_pin.c
-    ${PROJECT_DIR}/machine_touchpad.c
-    ${PROJECT_DIR}/machine_adc.c
-    ${PROJECT_DIR}/machine_dac.c
-    ${PROJECT_DIR}/machine_i2c.c
-    ${PROJECT_DIR}/machine_pwm.c
-    ${PROJECT_DIR}/machine_uart.c
-    ${PROJECT_DIR}/modmachine.c
-    ${PROJECT_DIR}/modnetwork.c
-    ${PROJECT_DIR}/network_lan.c
-    ${PROJECT_DIR}/network_ppp.c
-    ${PROJECT_DIR}/mpnimbleport.c
-    ${PROJECT_DIR}/modsocket.c
-    ${PROJECT_DIR}/modesp.c
-    ${PROJECT_DIR}/esp32_partition.c
-    ${PROJECT_DIR}/esp32_rmt.c
-    ${PROJECT_DIR}/esp32_ulp.c
-    ${PROJECT_DIR}/modesp32.c
-    ${PROJECT_DIR}/espneopixel.c
-    ${PROJECT_DIR}/machine_hw_spi.c
-    ${PROJECT_DIR}/machine_wdt.c
+    ${PROJECT_DIR}/unix_mphal.c
     ${PROJECT_DIR}/mpthreadport.c
-    ${PROJECT_DIR}/machine_rtc.c
-    ${PROJECT_DIR}/machine_sdcard.c
+    ${PROJECT_DIR}/input.c
+    ${PROJECT_DIR}/modmachine.c
+    ${PROJECT_DIR}/modos.c
+    ${PROJECT_DIR}/moduos_vfs.c
+    ${PROJECT_DIR}/modtime.c
+    ${PROJECT_DIR}/moduselect.c
+    ${PROJECT_DIR}/alloc.c
+    ${PROJECT_DIR}/fatfs_port.c
+    ${PROJECT_DIR}/mpbthciport.c
+    ${PROJECT_DIR}/mpbtstackport_common.c
+    ${PROJECT_DIR}/mpbtstackport_h4.c
+    ${PROJECT_DIR}/mpbtstackport_usb.c
+    ${PROJECT_DIR}/mpnimbleport.c
+    ${PROJECT_DIR}/modusocket.c
+    ${PROJECT_DIR}/modtermios.c
 )
 
 set(MICROPY_SOURCE_QSTR
@@ -180,12 +228,16 @@ set(LVGL_HEADERS
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(LV_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c")
+#set(LODEPNG_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lodepng_mpy.c")
 
 # create dummy file if does not exist
 if(NOT EXISTS ${LV_MPY_C_FILE})
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lvgl)
     file(TOUCH ${LV_MPY_C_FILE})
 endif()
+# if(NOT EXISTS ${LODEPNG_MPY_C_FILE})
+    # file(TOUCH ${LODEPNG_MPY_C_FILE})
+# endif()
 
 add_custom_target(GenLvglBinding
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
@@ -197,22 +249,39 @@ add_custom_target(GenLvglBinding
     VERBATIM
 )
 
+# add_custom_target(GenLodepngBinding
+    # COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
+    # COMMAND ${CMAKE_C_COMPILER} -E -I ${LVGL_BINDINGS_DIR}/pycparser/utils/fake_libc_include -I ${LVGL_BINDINGS_DIR} ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng.h > ${CMAKE_BINARY_DIR}/lvgl/lodepng.pp.c
+    # COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lodepng -E ${CMAKE_BINARY_DIR}/lvgl/lodepng.pp.c ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng.h > ${CMAKE_BINARY_DIR}/lvgl/lodepng_mpy.c
+    # BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lodepng.pp.c" #${LV_MPY_C_FILE}
+    # COMMENT "Preprocessing Lodepng for generating bindings"
+    # DEPENDS ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng.h #${LVGL_HEADERS} 
+    # VERBATIM
+# )
+
 set(LVGL_SOURCES
     ${LV_MPY_C_FILE}
     #${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
-    ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
-    ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c
-    ${LVGL_BINDINGS_DIR}/driver/esp32/modrtch.c
+    # ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
+    # ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c
+    # ${LVGL_BINDINGS_DIR}/driver/esp32/modrtch.c
     #${LVGL_BINDINGS_DIR}/driver/esp32/modxpt2046.c
-    #${LVGL_BINDINGS_DIR}/driver/generic/modlvindev.c
-    #${LVGL_BINDINGS_DIR}/driver/linux/modfb.c
+#============== sdl ========================
+    ${LVGL_BINDINGS_DIR}/driver/SDL/modSDL.c
+    ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_monitor.c
+    ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_mouse.c
+    ${LVGL_BINDINGS_DIR}/driver/linux/modfb.c
+    ${LVGL_BINDINGS_DIR}/driver/generic/modlvindev.c
+#============== lodepng ========================
+    # ${LODEPNG_MPY_C_FILE}
     # ${LVGL_BINDINGS_DIR}/driver/png/mp_lodepng.c
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng.cpp
-    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_benchmark.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_fuzzer.cpp
-    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_unittest.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_util.cpp
-    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/pngdetail.cpp
+#============== lodepng ========================
+    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_benchmark.cpp
+    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_unittest.cpp
+    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/pngdetail.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_4bit_palette.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_bmp2png.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_decode.c
@@ -228,9 +297,6 @@ set(LVGL_SOURCES
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_reencode.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_sdl.c
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_sdl.cpp
-    # ${LVGL_BINDINGS_DIR}/driver/SDL/modSDL.c
-    # ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_monitor.c
-    # ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_mouse.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/string1.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/ft5336.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/modrk043fn48h.c
@@ -359,38 +425,9 @@ list(APPEND MICROPY_SOURCE_QSTR ${LVGL_SOURCES})
 
 endif()
 
-set(IDF_COMPONENTS
-    app_update
-    bootloader_support
-    driver
-    esp32
-    esp_common
-    esp_eth
-    esp_event
-    esp_netif
-    esp_ringbuf
-    esp_rom
-    esp_wifi
-    freertos
-    heap
-    log
-    lwip
-    mbedtls
-    mdns
-    newlib
-    nvs_flash
-    sdmmc
-    soc
-    spi_flash
-    tcpip_adapter
-    ulp
-    vfs
-    xtensa
-)
-
 # Register the main IDF component.
-idf_component_register(
-    SRCS
+target_sources(${MICROPY_TARGET} 
+    PRIVATE 
         ${MICROPY_SOURCE_PY}
         ${MICROPY_SOURCE_EXTMOD}
         ${MICROPY_SOURCE_EXTMOD_EXTRA}
@@ -398,33 +435,37 @@ idf_component_register(
         ${MICROPY_SOURCE_DRIVERS}
         ${MICROPY_SOURCE_PORT}
         ${LVGL_SOURCES}
-    INCLUDE_DIRS
+)
+target_include_directories(${MICROPY_TARGET} 
+    PRIVATE 
         ${MICROPY_DIR}
         ${MICROPY_PORT_DIR}
         ${MICROPY_BOARD_DIR}
         ${CMAKE_BINARY_DIR}
         ${LVGL_INCLUDES}
-    REQUIRES
-        ${IDF_COMPONENTS}
 )
 
 # Set the MicroPython target as the current (main) IDF component target.
-set(MICROPY_TARGET ${COMPONENT_TARGET})
 
 #target_sources(${MICROPY_TARGET} PRIVATE ${LV_MPY_C_FILE})
 
 # Define mpy-cross flags and frozen manifest
-set(MICROPY_CROSS_FLAGS -march=xtensawin)
-set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/boards/manifest.py)
+set(MICROPY_CROSS_FLAGS -mcache-lookup-bc)
 
 # Set compile options for this port.
 target_compile_definitions(${MICROPY_TARGET} PUBLIC
-    MICROPY_ESP_IDF_4=1
+    #MICROPY_ESP_IDF_4=1
+    MICROPY_VFS=1
     MICROPY_VFS_FAT=1
     MICROPY_VFS_LFS2=1
     FFCONF_H=\"${MICROPY_OOFATFS_DIR}/ffconf.h\"
     LFS1_NO_MALLOC LFS1_NO_DEBUG LFS1_NO_WARN LFS1_NO_ERROR LFS1_NO_ASSERT
     LFS2_NO_MALLOC LFS2_NO_DEBUG LFS2_NO_WARN LFS2_NO_ERROR LFS2_NO_ASSERT
+    # use vfs's functions for import stat and builtin open
+    mp_import_stat=mp_vfs_import_stat
+    mp_builtin_open=mp_vfs_open
+    mp_builtin_open_obj=mp_vfs_open_obj
+
 )
 
 target_compile_definitions(${MICROPY_TARGET} PUBLIC
@@ -439,28 +480,28 @@ target_compile_options(${MICROPY_TARGET} PUBLIC
     -Wno-missing-field-initializers
 )
 if(${LVGL_BINDING})
-add_dependencies(${MICROPY_TARGET} GenLvglBinding)
+add_dependencies(${MICROPY_TARGET} GenLvglBinding) #GenLodepngBinding
 endif()
 
-# Collect all of the include directories and compile definitions for the IDF components.
-foreach(comp ${IDF_COMPONENTS})
-    get_target_property(type __idf_${comp} TYPE)
-    set(_inc OFF)
-    set(_def OFF)
-    if(${type} STREQUAL STATIC_LIBRARY)
-        get_target_property(_inc __idf_${comp} INCLUDE_DIRECTORIES)
-        get_target_property(_def __idf_${comp} COMPILE_DEFINITIONS)
-    elseif(${type} STREQUAL INTERFACE_LIBRARY)
-        get_target_property(_inc __idf_${comp} INTERFACE_INCLUDE_DIRECTORIES)
-        get_target_property(_def __idf_${comp} INTERFACE_COMPILE_DEFINITIONS)
-    endif()
-    if(_inc)
-        list(APPEND MICROPY_CPP_INC_EXTRA ${_inc})
-    endif()
-    if(_def)
-        list(APPEND MICROPY_CPP_DEF_EXTRA ${_def})
-    endif()
-endforeach()
+#=========================================================================
+# Libraries
+#=========================================================================
 
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+target_link_libraries(${MICROPY_TARGET} ${SDL2_LIBRARIES})
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(${MICROPY_TARGET} Threads::Threads)
+
+include(CheckLibraryExists)
+check_library_exists(m pow "" LIBM) # math library
+if(LIBM)
+    target_link_libraries(${MICROPY_TARGET} m)
+endif()
+
+#=========================================================================
 # Include the main MicroPython cmake rules.
+#=========================================================================
 include(${MICROPY_DIR}/py/mkrules.cmake)
