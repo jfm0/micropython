@@ -27,9 +27,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#ifndef _WIN32
 #include <unistd.h> // for ssize_t
-#endif
 #include <assert.h>
 #include <string.h>
 

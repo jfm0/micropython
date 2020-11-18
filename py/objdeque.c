@@ -24,9 +24,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef _WIN32
 #include <unistd.h> // for ssize_t
-#endif
 #include <string.h>
 
 #include "py/mpconfig.h"

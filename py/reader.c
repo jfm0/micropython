@@ -71,9 +71,7 @@ void mp_reader_new_mem(mp_reader_t *reader, const byte *buf, size_t len, size_t 
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 
 typedef struct _mp_reader_posix_t {
     bool close_fd;

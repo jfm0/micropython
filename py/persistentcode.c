@@ -830,9 +830,7 @@ void mp_raw_code_save(mp_raw_code_t *rc, mp_print_t *print) {
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_WIN32) || defined(__unix__)
 
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 

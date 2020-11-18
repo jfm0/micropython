@@ -29,7 +29,7 @@
 #include "py/mphal.h"
 #include "py/mpthread.h"
 
-//#include <sys/time.h>
+#include <sys/time.h>
 #include <windows.h>
 #include <unistd.h>
 
@@ -235,41 +235,15 @@ void mp_hal_stdout_tx_str(const char *str) {
 }
 
 mp_uint_t mp_hal_ticks_ms(void) {
-    //https://stackoverflow.com/questions/20370920/convert-current-time-from-windows-to-unix-timestamp-in-c-or-c
-    const LONGLONG UNIX_TIME_START = 0x019DB1DED53E8000; //January 1, 1970 (start of Unix epoch) in "ticks"
-    const LONGLONG TICKS_PER_MILLISECOND = 10000; //a tick is 100ns
-
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft); //returns ticks in UTC
-
-    //Copy the low and high parts of FILETIME into a LARGE_INTEGER
-    //This is so we can access the full 64-bits as an Int64 without causing an alignment fault
-    LARGE_INTEGER li;
-    li.LowPart  = ft.dwLowDateTime;
-    li.HighPart = ft.dwHighDateTime;
-
-    //Convert ticks since 1/1/1970 into seconds
-    mp_uint_t val = ((li.QuadPart - UNIX_TIME_START) / TICKS_PER_MILLISECOND);
-    return val;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
 mp_uint_t mp_hal_ticks_us(void) {
-    //https://stackoverflow.com/questions/20370920/convert-current-time-from-windows-to-unix-timestamp-in-c-or-c
-    const LONGLONG UNIX_TIME_START = 0x019DB1DED53E8000; //January 1, 1970 (start of Unix epoch) in "ticks"
-    const LONGLONG TICKS_PER_MICROSECOND = 10; //a tick is 100ns
-
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft); //returns ticks in UTC
-
-    //Copy the low and high parts of FILETIME into a LARGE_INTEGER
-    //This is so we can access the full 64-bits as an Int64 without causing an alignment fault
-    LARGE_INTEGER li;
-    li.LowPart  = ft.dwLowDateTime;
-    li.HighPart = ft.dwHighDateTime;
-
-    //Convert ticks since 1/1/1970 into seconds
-    mp_uint_t val = ((li.QuadPart - UNIX_TIME_START) / TICKS_PER_MICROSECOND);
-    return val;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 mp_uint_t mp_hal_ticks_cpu(void) {
@@ -283,19 +257,7 @@ mp_uint_t mp_hal_ticks_cpu(void) {
 }
 
 uint64_t mp_hal_time_ns(void) {
-    //https://stackoverflow.com/questions/20370920/convert-current-time-from-windows-to-unix-timestamp-in-c-or-c
-    const LONGLONG UNIX_TIME_START = 0x019DB1DED53E8000; //January 1, 1970 (start of Unix epoch) in "ticks"
-
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft); //returns ticks in UTC
-
-    //Copy the low and high parts of FILETIME into a LARGE_INTEGER
-    //This is so we can access the full 64-bits as an Int64 without causing an alignment fault
-    LARGE_INTEGER li;
-    li.LowPart  = ft.dwLowDateTime;
-    li.HighPart = ft.dwHighDateTime;
-
-    //Convert ticks since 1/1/1970 into seconds
-    uint64_t val = ((li.QuadPart - UNIX_TIME_START) * 100); //a tick is 100ns
-    return val;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000000ULL + (uint64_t)tv.tv_usec * 1000ULL;
 }

@@ -15,6 +15,7 @@ set_target_properties(mpy-cross PROPERTIES
 target_include_directories(mpy-cross PUBLIC . ${CMAKE_BINARY_DIR} ${MICROPY_DIR})
 
 if(WIN32)
+target_include_directories(mpy-cross PUBLIC ${MICROPY_DIR}/ports/windows/msvc)
 set(MICROPY_SOURCE_QSTR ${MICROPY_DIR}/ports/windows/fmode.c)
 endif()
 

@@ -104,6 +104,7 @@ set(MICROPY_SOURCE_PORT
     ${MICROPY_DIR}/ports/windows/sleep.c
     ${MICROPY_DIR}/ports/windows/fmode.c
     ${MICROPY_DIR}/ports/windows/msvc/dirent.c
+    ${MICROPY_DIR}/ports/windows/msvc/gettimeofday.c
     # ==================== unix
     ${MICROPY_DIR}/ports/unix/main.c
     ${MICROPY_DIR}/ports/unix/gccollect.c
@@ -499,9 +500,10 @@ endif()
 #=========================================================================
 
 find_package(SDL2 REQUIRED)
-#message(WARNING "SDL2_INCLUDE_DIRS=${SDL2_INCLUDE_DIRS}")
+message(WARNING "SDL2_INCLUDE_DIRS=${SDL2_INCLUDE_DIRS}")
+message(WARNING "SDL2_LIBRARIES=${SDL2_LIBRARIES}")
 include_directories(${SDL2_INCLUDE_DIRS})
-target_link_libraries(${MICROPY_TARGET} ${SDL2_LIBRARIES})
+target_link_libraries(${MICROPY_TARGET} SDL2::SDL2)#${SDL2_LIBRARIES})
 
 # set(THREADS_PREFER_PTHREAD_FLAG ON)
 # find_package(Threads REQUIRED)
