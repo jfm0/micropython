@@ -238,10 +238,12 @@ set(LVGL_HEADERS
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(LV_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c")
+set(LV_MPY_C_FILE_MODIFIED "${LVGL_BINDINGS_DIR}/lv_mpy.c")
 #set(LODEPNG_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lodepng_mpy.c")
 
 # create dummy file if does not exist
 if(NOT EXISTS ${LV_MPY_C_FILE})
+    #message(WARNING "LV_MPY_C_FILE=${LV_MPY_C_FILE} not exists?")
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lvgl)
     file(TOUCH ${LV_MPY_C_FILE})
 endif()
@@ -255,7 +257,7 @@ add_custom_target(GenLvglBinding
     COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lvgl -MP lv -MD ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.json -E ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c
     BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c" #${LV_MPY_C_FILE}
     COMMENT "Preprocessing Lvgl for generating bindings"
-    DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS} 
+    DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS}
     VERBATIM
 )
 
@@ -270,7 +272,7 @@ add_custom_target(GenLvglBinding
 # )
 
 set(LVGL_SOURCES
-    ${LV_MPY_C_FILE}
+    ${LV_MPY_C_FILE_MODIFIED}
     #${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c

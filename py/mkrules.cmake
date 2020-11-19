@@ -38,11 +38,11 @@ target_sources(${MICROPY_TARGET} PRIVATE
 
 # Command to force the build of another command
 
-add_custom_command(
-    OUTPUT MICROPY_FORCE_BUILD
-    COMMENT ""
-    COMMAND echo -n
-)
+# add_custom_command(
+    # OUTPUT MICROPY_FORCE_BUILD
+    # COMMENT ""
+    # COMMAND echo -n
+# )
 
 # Generate mpversion.h
 
@@ -50,7 +50,7 @@ add_custom_command(
     OUTPUT ${MICROPY_MPVERSION}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${MICROPY_GENHDR_DIR}
     COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/py/makeversionhdr.py ${MICROPY_MPVERSION}
-    DEPENDS MICROPY_FORCE_BUILD
+    # DEPENDS MICROPY_FORCE_BUILD
 )
 
 # Generate moduledefs.h
@@ -126,7 +126,7 @@ if(MICROPY_FROZEN_MANIFEST)
     add_custom_command(
         OUTPUT ${MICROPY_FROZEN_CONTENT}
         COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/tools/makemanifest.py -o ${MICROPY_FROZEN_CONTENT} -v "MPY_DIR=${MICROPY_DIR}" -v "PORT_DIR=${MICROPY_PORT_DIR}" -b "${CMAKE_BINARY_DIR}" -f${MICROPY_CROSS_FLAGS} ${MICROPY_FROZEN_MANIFEST}
-        DEPENDS MICROPY_FORCE_BUILD
+        DEPENDS #MICROPY_FORCE_BUILD
             ${MICROPY_QSTR_DEFS_GENERATED}
         VERBATIM
     )
