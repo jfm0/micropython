@@ -6,7 +6,7 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
 #set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
-set(MICROPY_FROZEN_MANIFEST ${MICROPY_DIR}/ports/unix/variants/manifest.py)
+set(MICROPY_FROZEN_MANIFEST ${MICROPY_DIR}/ports/unix/variants/dev/manifest.py)
 
 #=========================================================================
 # Include core source components.
@@ -98,6 +98,7 @@ set(MICROPY_SOURCE_DRIVERS
 
 set(MICROPY_SOURCE_PORT
     # ==================== windows specific
+    ${MICROPY_DIR}/ports/windows/mpconfigport.h
     ${MICROPY_DIR}/ports/windows/windows_mphal.c
     ${MICROPY_DIR}/ports/windows/realpath.c
     ${MICROPY_DIR}/ports/windows/init.c
@@ -136,6 +137,7 @@ set(MICROPY_SOURCE_QSTR
 )
 
 #### Custom C modules
+set(LVGL_BINDING On CACHE BOOL "Enable lvgl")
 if(${LVGL_BINDING})
 set(LVGL_BINDINGS_DIR "${MICROPY_DIR}/lib/lv_bindings")
 
@@ -254,8 +256,8 @@ endif()
 add_custom_target(GenLvglBinding
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
     COMMAND ${CMAKE_C_COMPILER} -E -DLV_COLOR_DEPTH=16 -DLV_COLOR_16_SWAP=1 -I ${LVGL_BINDINGS_DIR}/pycparser/utils/fake_libc_include -I ${LVGL_BINDINGS_DIR} ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c
-    COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lvgl -MP lv -MD ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.json -E ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c
-    BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c" #${LV_MPY_C_FILE}
+    COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lvgl -MP lv -MD ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.json -E ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${LV_MPY_C_FILE}
+    BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c" ${LV_MPY_C_FILE}
     COMMENT "Preprocessing Lvgl for generating bindings"
     DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS}
     VERBATIM
@@ -506,6 +508,11 @@ find_package(SDL2 REQUIRED)
 #message(WARNING "SDL2_LIBRARIES=${SDL2_LIBRARIES}")
 include_directories(${SDL2_INCLUDE_DIRS})
 target_link_libraries(${MICROPY_TARGET} SDL2::SDL2)#${SDL2_LIBRARIES})
+
+add_custom_command(TARGET ${MICROPY_TARGET} POST_BUILD        # Adds a post-build event to MyTest
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${SDL2_DIR}/../bin/SDL2.dll"      # <--this is in-file
+        $<TARGET_FILE_DIR:${MICROPY_TARGET}>)  
 
 # set(THREADS_PREFER_PTHREAD_FLAG ON)
 # find_package(Threads REQUIRED)

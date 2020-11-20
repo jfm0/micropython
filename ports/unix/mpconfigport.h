@@ -57,8 +57,8 @@
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_ENABLE_FINALISER    (1)
 #define MICROPY_STACK_CHECK         (1)
-#define MICROPY_MALLOC_USES_ALLOCATED_SIZE (0)
-#define MICROPY_MEM_STATS           (0)
+#define MICROPY_MALLOC_USES_ALLOCATED_SIZE (0) //can't use this with lv
+#define MICROPY_MEM_STATS           (0) //can't use this with lv
 #define MICROPY_DEBUG_PRINTERS      (1)
 #define MICROPY_ENABLE_SCHEDULER    (1)
 #define MICROPY_MODULE_BUILTIN_INIT (1)
@@ -149,6 +149,33 @@
 #else
     #define MICROPY_PY_LVGL_FB      (0)
 #endif
+extern const struct _mp_obj_module_t mp_module_lvgl;
+extern const struct _mp_obj_module_t mp_module_lvindev;
+extern const struct _mp_obj_module_t mp_module_SDL;
+extern const struct _mp_obj_module_t mp_module_fb;
+extern const struct _mp_obj_module_t mp_module_lodepng;
+#if MICROPY_PY_LVGL
+#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
+#define MICROPY_PY_LVGL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },
+    #if MICROPY_PY_LVGL_SDL
+    #define MICROPY_PY_LVGL_SDL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_SDL), (mp_obj_t)&mp_module_SDL },
+    #else
+    #define MICROPY_PY_LVGL_SDL_DEF
+    #endif
+    #if MICROPY_PY_LVGL_FB
+    #define MICROPY_PY_LVGL_FB_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_fb), (mp_obj_t)&mp_module_fb },
+    #else
+    #define MICROPY_PY_LVGL_FB_DEF
+    #endif
+    #if MICROPY_PY_LVGL_LODEPNG
+    #define MICROPY_PY_LVGL_LODEPNG_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+    #else
+    #define MICROPY_PY_LVGL_LODEPNG_DEF
+    #endif
+#else
+    #define LV_ROOTS
+    #define MICROPY_PY_LVGL_DEF
+#endif
 
 #define MICROPY_PY_OS_STATVFS       (1)
 #define MICROPY_PY_UTIME            (1)
@@ -201,7 +228,7 @@ extern const struct _mp_print_t mp_stderr_print;
 #endif
 
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (1)
-#define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE  (256)
+#define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE     (256)
 #define MICROPY_KBD_EXCEPTION       (1)
 #define MICROPY_ASYNC_KBD_INTR      (1)
 
@@ -217,11 +244,6 @@ extern const struct _mp_obj_module_t mp_module_termios;
 extern const struct _mp_obj_module_t mp_module_socket;
 extern const struct _mp_obj_module_t mp_module_ffi;
 extern const struct _mp_obj_module_t mp_module_jni;
-extern const struct _mp_obj_module_t mp_module_lvgl;
-extern const struct _mp_obj_module_t mp_module_lvindev;
-extern const struct _mp_obj_module_t mp_module_SDL;
-extern const struct _mp_obj_module_t mp_module_fb;
-extern const struct _mp_obj_module_t mp_module_lodepng;
 
 #if MICROPY_PY_UOS_VFS
 #define MICROPY_PY_UOS_DEF { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos_vfs) },
@@ -257,29 +279,6 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
 #define MICROPY_PY_USELECT_DEF { MP_ROM_QSTR(MP_QSTR_uselect), MP_ROM_PTR(&mp_module_uselect) },
 #else
 #define MICROPY_PY_USELECT_DEF
-#endif
-
-#if MICROPY_PY_LVGL
-#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
-#define MICROPY_PY_LVGL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },
-    #if MICROPY_PY_LVGL_SDL
-    #define MICROPY_PY_LVGL_SDL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_SDL), (mp_obj_t)&mp_module_SDL },
-    #else
-    #define MICROPY_PY_LVGL_SDL_DEF
-    #endif
-    #if MICROPY_PY_LVGL_FB
-    #define MICROPY_PY_LVGL_FB_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_fb), (mp_obj_t)&mp_module_fb },
-    #else
-    #define MICROPY_PY_LVGL_FB_DEF
-    #endif
-    #if MICROPY_PY_LVGL_LODEPNG
-    #define MICROPY_PY_LVGL_LODEPNG_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
-    #else
-    #define MICROPY_PY_LVGL_LODEPNG_DEF
-    #endif
-#else
-    #define LV_ROOTS
-    #define MICROPY_PY_LVGL_DEF
 #endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \

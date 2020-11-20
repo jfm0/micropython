@@ -47,11 +47,24 @@ def preprocess():
 
 
 def write_out(fname, output):
+    # Only write the file if we need to
     if output:
         for m, r in [("/", "__"), ("\\", "__"), (":", "@"), ("..", "@@")]:
             fname = fname.replace(m, r)
-        with open(args.output_dir + "/" + fname + "." + args.mode, "w") as f:
-            f.write("\n".join(output) + "\n")
+        file_path = args.output_dir + "/" + fname + "." + args.mode
+        # Check if the file contents changed from last time
+        write_file = True
+        if os.path.isfile(file_path):
+            with open(file_path, "r") as f:
+                existing_data = f.read()
+            if existing_data == output:
+                write_file = False
+
+        if write_file:
+            with open(args.output_file, "w") as f:
+                f.write("this file is modified when any split file is modified.")
+            with open(file_path, "w") as f:
+                f.write("\n".join(output) + "\n")
 
 
 def process_file(f):
@@ -106,7 +119,6 @@ def cat_together():
     outf.close()
     hasher.update(all_lines)
     new_hash = hasher.hexdigest()
-    # print(new_hash)
     old_hash = None
     try:
         with open(args.output_file + ".hash") as f:
@@ -116,6 +128,8 @@ def cat_together():
     mode_full = "QSTR"
     if args.mode == _MODE_COMPRESS:
         mode_full = "Compressed data"
+    print(new_hash)
+    print(old_hash)
     if old_hash != new_hash:
         print(mode_full, "updated")
         try:
@@ -174,7 +188,7 @@ if __name__ == "__main__":
     args.mode = sys.argv[2]
     args.input_filename = sys.argv[3]  # Unused for command=cat
     args.output_dir = sys.argv[4]
-    args.output_file = None if len(sys.argv) == 5 else sys.argv[5]  # Unused for command=split
+    args.output_file = sys.argv[5]  # Unused for command=split
 
     if args.mode not in (_MODE_QSTR, _MODE_COMPRESS):
         print("error: mode %s unrecognised" % sys.argv[2])
@@ -187,7 +201,7 @@ if __name__ == "__main__":
 
     if args.command == "split":
         with io.open(args.input_filename, encoding="utf-8") as infile:
-            process_file(infile)
+            process_file(infile) # args.output_file is created if any new or modified file created
 
     if args.command == "cat":
         cat_together()

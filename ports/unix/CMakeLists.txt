@@ -5,8 +5,8 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
-set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
-set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/variants/manifest.py)
+set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/dev)
+set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/variants/dev/manifest.py)
 
 #=========================================================================
 # Include core source components.

@@ -26,52 +26,16 @@
 
 // options to control how MicroPython is built
 
+#define MICROPY_PY_UASYNCIO              (1)
+#define MICROPY_PY_USELECT               (1)
+#define MICROPY_PY_BUILTINS_HELP         (1)
+#define MICROPY_PY_BUILTINS_HELP_MODULES (1)
+
+#define MICROPY_EVENT_POLL_HOOK mp_hal_delay_us(500); // required for MICROPY_PY_USELECT
+
 // By default use MicroPython version of readline
 #ifndef MICROPY_USE_READLINE
 #define MICROPY_USE_READLINE        (1)
-#endif
-
-#define MICROPY_ENABLE_SCHEDULER    (1)
-
-#define MICROPY_FATFS_ENABLE_LFN       (1)
-#define MICROPY_FATFS_RPATH            (2)
-#define MICROPY_FATFS_MAX_SS           (4096)
-#define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
-
-#define MICROPY_PY_LVGL             (1)
-#define MICROPY_PY_LVGL_SDL         (1)
-#define MICROPY_PY_LVGL_LODEPNG     (0)
-#if LINUX_FRAME_BUFFER
-    #define MICROPY_PY_LVGL_FB      (1)
-#else
-    #define MICROPY_PY_LVGL_FB      (0)
-#endif
-extern const struct _mp_obj_module_t mp_module_lvgl;
-extern const struct _mp_obj_module_t mp_module_lvindev;
-extern const struct _mp_obj_module_t mp_module_SDL;
-extern const struct _mp_obj_module_t mp_module_fb;
-extern const struct _mp_obj_module_t mp_module_lodepng;
-#if MICROPY_PY_LVGL
-#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
-#define MICROPY_PY_LVGL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },
-    #if MICROPY_PY_LVGL_SDL
-    #define MICROPY_PY_LVGL_SDL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_SDL), (mp_obj_t)&mp_module_SDL },
-    #else
-    #define MICROPY_PY_LVGL_SDL_DEF
-    #endif
-    #if MICROPY_PY_LVGL_FB
-    #define MICROPY_PY_LVGL_FB_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_fb), (mp_obj_t)&mp_module_fb },
-    #else
-    #define MICROPY_PY_LVGL_FB_DEF
-    #endif
-    #if MICROPY_PY_LVGL_LODEPNG
-    #define MICROPY_PY_LVGL_LODEPNG_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
-    #else
-    #define MICROPY_PY_LVGL_LODEPNG_DEF
-    #endif
-#else
-    #define LV_ROOTS
-    #define MICROPY_PY_LVGL_DEF
 #endif
 
 #define MICROPY_ALLOC_PATH_MAX      (260) // see minwindef.h for msvc or limits.h for mingw
@@ -88,8 +52,9 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
 #define MICROPY_STACK_CHECK         (1)
 #define MICROPY_MALLOC_USES_ALLOCATED_SIZE (0) //can't use this with lv
 #define MICROPY_MEM_STATS           (0) //can't use this with lv
-#define MICROPY_DEBUG_PRINTER       (&mp_stderr_print)
 #define MICROPY_DEBUG_PRINTERS      (1)
+#define MICROPY_ENABLE_SCHEDULER    (1)
+#define MICROPY_DEBUG_PRINTER       (&mp_stderr_print)
 #define MICROPY_READER_POSIX        (1)
 #define MICROPY_USE_READLINE_HISTORY (1)
 #define MICROPY_HELPER_REPL         (1)
@@ -97,12 +62,18 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
 #define MICROPY_REPL_AUTO_INDENT    (1)
 #define MICROPY_HELPER_LEXER_UNIX   (1)
 #define MICROPY_ENABLE_SOURCE_LINE  (1)
+#ifndef MICROPY_FLOAT_IMPL
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_DOUBLE)
+#endif
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
+#ifndef MICROPY_STREAMS_NON_BLOCK
 #define MICROPY_STREAMS_NON_BLOCK   (1)
+#endif
 #define MICROPY_STREAMS_POSIX_API   (1)
 #define MICROPY_OPT_COMPUTED_GOTO   (0)
+#ifndef MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE
 #define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (1)
+#endif
 #define MICROPY_MODULE_WEAK_LINKS   (1)
 #define MICROPY_CAN_OVERRIDE_BUILTINS (1)
 #define MICROPY_VFS_POSIX_FILE      (1)
@@ -140,9 +111,47 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
 #define MICROPY_PY_GC_COLLECT_RETVAL (1)
 #define MICROPY_MODULE_FROZEN_STR   (0)
 
+#ifndef MICROPY_STACKLESS
 #define MICROPY_STACKLESS           (0)
 #define MICROPY_STACKLESS_STRICT    (0)
+#endif
 
+
+#define MICROPY_PY_LVGL             (1)
+#define MICROPY_PY_LVGL_SDL         (1)
+#define MICROPY_PY_LVGL_LODEPNG     (0)
+#if LINUX_FRAME_BUFFER
+    #define MICROPY_PY_LVGL_FB      (1)
+#else
+    #define MICROPY_PY_LVGL_FB      (0)
+#endif
+extern const struct _mp_obj_module_t mp_module_lvgl;
+extern const struct _mp_obj_module_t mp_module_lvindev;
+extern const struct _mp_obj_module_t mp_module_SDL;
+extern const struct _mp_obj_module_t mp_module_fb;
+extern const struct _mp_obj_module_t mp_module_lodepng;
+#if MICROPY_PY_LVGL
+#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
+#define MICROPY_PY_LVGL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },
+    #if MICROPY_PY_LVGL_SDL
+    #define MICROPY_PY_LVGL_SDL_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_SDL), (mp_obj_t)&mp_module_SDL },
+    #else
+    #define MICROPY_PY_LVGL_SDL_DEF
+    #endif
+    #if MICROPY_PY_LVGL_FB
+    #define MICROPY_PY_LVGL_FB_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_fb), (mp_obj_t)&mp_module_fb },
+    #else
+    #define MICROPY_PY_LVGL_FB_DEF
+    #endif
+    #if MICROPY_PY_LVGL_LODEPNG
+    #define MICROPY_PY_LVGL_LODEPNG_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+    #else
+    #define MICROPY_PY_LVGL_LODEPNG_DEF
+    #endif
+#else
+    #define LV_ROOTS
+    #define MICROPY_PY_LVGL_DEF
+#endif
 #define MICROPY_PY_UTIME            (1)
 #define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_UERRNO           (1)
@@ -161,9 +170,16 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
 #define MICROPY_MACHINE_MEM_GET_READ_ADDR   mod_machine_mem_get_addr
 #define MICROPY_MACHINE_MEM_GET_WRITE_ADDR  mod_machine_mem_get_addr
 
+#define MICROPY_FATFS_ENABLE_LFN       (1)
+#define MICROPY_FATFS_RPATH            (2)
+#define MICROPY_FATFS_MAX_SS           (4096)
+#define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+
+// Define to MICROPY_ERROR_REPORTING_DETAILED to get function, etc.
+// names in exception messages (may require more RAM).
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_DETAILED)
-#define MICROPY_ERROR_PRINTER       (&mp_stderr_print)
 #define MICROPY_WARNINGS            (1)
+#define MICROPY_ERROR_PRINTER       (&mp_stderr_print)
 #define MICROPY_PY_STR_BYTES_CMP_WARN (1)
 
 // VFS stat functions should return time values relative to 1970/1/1
@@ -201,7 +217,7 @@ typedef __int64 mp_int_t;
 typedef unsigned __int64 mp_uint_t;
 #else
 // These are definitions for machines where sizeof(int) == sizeof(void*),
-// regardless for actual size.
+// regardless of actual size.
 typedef int mp_int_t; // must be pointer size
 typedef unsigned int mp_uint_t; // must be pointer size
 #endif

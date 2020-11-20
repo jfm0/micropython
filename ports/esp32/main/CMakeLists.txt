@@ -76,7 +76,7 @@ set(MICROPY_SOURCE_QSTR
     ${MICROPY_SOURCE_LIB}
     ${MICROPY_SOURCE_PORT}
 )
-
+set(LVGL_BINDING On CACHE BOOL "Enable lvgl")
 #### Custom C modules
 if(${LVGL_BINDING})
 set(LVGL_BINDINGS_DIR "${MICROPY_DIR}/lib/lv_bindings")
