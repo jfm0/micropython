@@ -44,4 +44,10 @@ target_sources(mpy-cross PRIVATE
     ${MICROPY_QSTR_DEFS_GENERATED}
 )
 
+include(CheckLibraryExists)
+check_library_exists(m pow "" LIBM) # math library
+if(LIBM)
+    target_link_libraries(${MICROPY_TARGET} m)
+endif()
+
 #add_dependencies(mpy-cross MICROPY_FORCE_BUILD)
