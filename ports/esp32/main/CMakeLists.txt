@@ -370,7 +370,9 @@ set(IDF_COMPONENTS
     esp_netif
     esp_ringbuf
     esp_rom
+    esp_timer
     esp_wifi
+    esp_system
     freertos
     heap
     log
