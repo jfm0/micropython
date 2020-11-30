@@ -120,10 +120,11 @@ STATIC mp_import_stat_t find_file(const char *file_str, uint file_len, vstr_t *d
         }
 
         // could not find a directory or file
-        return MP_IMPORT_STAT_NO_EXIST;
+        // return MP_IMPORT_STAT_NO_EXIST; - fall through to just 'file_str' to find frozen modules - JFM
     }
     #endif
 
+    vstr_reset(dest);
     // mp_sys_path is empty, so just use the given file name
     vstr_add_strn(dest, file_str, file_len);
     return stat_dir_or_file(dest);

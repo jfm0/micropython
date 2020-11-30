@@ -53,7 +53,7 @@
 ///     # Define layout of a structure with 2 fields
 ///     # 0 and 4 are byte offsets of fields from the beginning of struct
 ///     # they are logically ORed with field type
-///     FOO_STRUCT = {"a": 0 | uctypes.UINT32, "b": 4 | uctypes.UINT8}
+///     FOO_STRUCT = {"a": 0 | uctypes.eUINT32, "b": 4 | uctypes.eUINT8}
 ///
 ///     # Example memory buffer to access (contained in bytes object)
 ///     buf = b"\x64\0\0\0\0x14"
@@ -79,9 +79,10 @@
 #error Invalid encoding field length
 #endif
 
+// Renamed from UINT8, INT8, etc to avoid conflict with windows.h - JFM
 enum {
-    UINT8, INT8, UINT16, INT16,
-    UINT32, INT32, UINT64, INT64,
+    eUINT8, eINT8, eUINT16, eINT16,
+    eUINT32, eINT32, eUINT64, eINT64,
 
     BFUINT8, BFINT8, BFUINT16, BFINT16,
     BFUINT32, BFINT32,
@@ -103,8 +104,8 @@ enum {
 #define VALUE_MASK(type_nbits) ~((int)0x80000000 >> type_nbits)
 
 #define IS_SCALAR_ARRAY(tuple_desc) ((tuple_desc)->len == 2)
-// We cannot apply the below to INT8, as their range [-128, 127]
-#define IS_SCALAR_ARRAY_OF_BYTES(tuple_desc) (GET_TYPE(MP_OBJ_SMALL_INT_VALUE((tuple_desc)->items[1]), VAL_TYPE_BITS) == UINT8)
+// We cannot apply the below to eINT8, as their range [-128, 127]
+#define IS_SCALAR_ARRAY_OF_BYTES(tuple_desc) (GET_TYPE(MP_OBJ_SMALL_INT_VALUE((tuple_desc)->items[1]), VAL_TYPE_BITS) == eUINT8)
 
 // "struct" in uctypes context means "structural", i.e. aggregate, type.
 STATIC const mp_obj_type_t uctypes_struct_type;
@@ -306,11 +307,11 @@ static inline void set_unaligned(uint val_type, byte *p, int big_endian, mp_obj_
 
 static inline mp_uint_t get_aligned_basic(uint val_type, void *p) {
     switch (val_type) {
-        case UINT8:
+        case eUINT8:
             return *(uint8_t *)p;
-        case UINT16:
+        case eUINT16:
             return *(uint16_t *)p;
-        case UINT32:
+        case eUINT32:
             return *(uint32_t *)p;
     }
     assert(0);
@@ -319,13 +320,13 @@ static inline mp_uint_t get_aligned_basic(uint val_type, void *p) {
 
 static inline void set_aligned_basic(uint val_type, void *p, mp_uint_t v) {
     switch (val_type) {
-        case UINT8:
+        case eUINT8:
             *(uint8_t *)p = (uint8_t)v;
             return;
-        case UINT16:
+        case eUINT16:
             *(uint16_t *)p = (uint16_t)v;
             return;
-        case UINT32:
+        case eUINT32:
             *(uint32_t *)p = (uint32_t)v;
             return;
     }
@@ -334,21 +335,21 @@ static inline void set_aligned_basic(uint val_type, void *p, mp_uint_t v) {
 
 STATIC mp_obj_t get_aligned(uint val_type, void *p, mp_int_t index) {
     switch (val_type) {
-        case UINT8:
+        case eUINT8:
             return MP_OBJ_NEW_SMALL_INT(((uint8_t *)p)[index]);
-        case INT8:
+        case eINT8:
             return MP_OBJ_NEW_SMALL_INT(((int8_t *)p)[index]);
-        case UINT16:
+        case eUINT16:
             return MP_OBJ_NEW_SMALL_INT(((uint16_t *)p)[index]);
-        case INT16:
+        case eINT16:
             return MP_OBJ_NEW_SMALL_INT(((int16_t *)p)[index]);
-        case UINT32:
+        case eUINT32:
             return mp_obj_new_int_from_uint(((uint32_t *)p)[index]);
-        case INT32:
+        case eINT32:
             return mp_obj_new_int(((int32_t *)p)[index]);
-        case UINT64:
+        case eUINT64:
             return mp_obj_new_int_from_ull(((uint64_t *)p)[index]);
-        case INT64:
+        case eINT64:
             return mp_obj_new_int_from_ll(((int64_t *)p)[index]);
         #if MICROPY_PY_BUILTINS_FLOAT
         case FLOAT32:
@@ -375,26 +376,26 @@ STATIC void set_aligned(uint val_type, void *p, mp_int_t index, mp_obj_t val) {
     #endif
     mp_int_t v = mp_obj_get_int_truncated(val);
     switch (val_type) {
-        case UINT8:
+        case eUINT8:
             ((uint8_t *)p)[index] = (uint8_t)v;
             return;
-        case INT8:
+        case eINT8:
             ((int8_t *)p)[index] = (int8_t)v;
             return;
-        case UINT16:
+        case eUINT16:
             ((uint16_t *)p)[index] = (uint16_t)v;
             return;
-        case INT16:
+        case eINT16:
             ((int16_t *)p)[index] = (int16_t)v;
             return;
-        case UINT32:
+        case eUINT32:
             ((uint32_t *)p)[index] = (uint32_t)v;
             return;
-        case INT32:
+        case eINT32:
             ((int32_t *)p)[index] = (int32_t)v;
             return;
-        case INT64:
-        case UINT64:
+        case eINT64:
+        case eUINT64:
             if (sizeof(mp_int_t) == 8) {
                 ((uint64_t *)p)[index] = (uint64_t)v;
             } else {
@@ -421,7 +422,7 @@ STATIC mp_obj_t uctypes_struct_attr_op(mp_obj_t self_in, qstr attr, mp_obj_t set
         offset &= VALUE_MASK(VAL_TYPE_BITS);
 // printf("scalar type=%d offset=%x\n", val_type, offset);
 
-        if (val_type <= INT64 || val_type == FLOAT32 || val_type == FLOAT64) {
+        if (val_type <= eINT64 || val_type == FLOAT32 || val_type == FLOAT64) {
 //            printf("size=%d\n", GET_SCALAR_SIZE(val_type));
             if (self->flags == LAYOUT_NATIVE) {
                 if (set_val == MP_OBJ_NULL) {
@@ -708,24 +709,24 @@ STATIC const mp_rom_map_elem_t mp_module_uctypes_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_BIG_ENDIAN), MP_ROM_INT(LAYOUT_BIG_ENDIAN) },
 
     /// \constant VOID - void value type, may be used only as pointer target type.
-    { MP_ROM_QSTR(MP_QSTR_VOID), MP_ROM_INT(TYPE2SMALLINT(UINT8, VAL_TYPE_BITS)) },
+    { MP_ROM_QSTR(MP_QSTR_VOID), MP_ROM_INT(TYPE2SMALLINT(eUINT8, VAL_TYPE_BITS)) },
 
-    /// \constant UINT8 - uint8_t value type
-    { MP_ROM_QSTR(MP_QSTR_UINT8), MP_ROM_INT(TYPE2SMALLINT(UINT8, 4)) },
-    /// \constant INT8 - int8_t value type
-    { MP_ROM_QSTR(MP_QSTR_INT8), MP_ROM_INT(TYPE2SMALLINT(INT8, 4)) },
-    /// \constant UINT16 - uint16_t value type
-    { MP_ROM_QSTR(MP_QSTR_UINT16), MP_ROM_INT(TYPE2SMALLINT(UINT16, 4)) },
-    /// \constant INT16 - int16_t value type
-    { MP_ROM_QSTR(MP_QSTR_INT16), MP_ROM_INT(TYPE2SMALLINT(INT16, 4)) },
-    /// \constant UINT32 - uint32_t value type
-    { MP_ROM_QSTR(MP_QSTR_UINT32), MP_ROM_INT(TYPE2SMALLINT(UINT32, 4)) },
-    /// \constant INT32 - int32_t value type
-    { MP_ROM_QSTR(MP_QSTR_INT32), MP_ROM_INT(TYPE2SMALLINT(INT32, 4)) },
-    /// \constant UINT64 - uint64_t value type
-    { MP_ROM_QSTR(MP_QSTR_UINT64), MP_ROM_INT(TYPE2SMALLINT(UINT64, 4)) },
-    /// \constant INT64 - int64_t value type
-    { MP_ROM_QSTR(MP_QSTR_INT64), MP_ROM_INT(TYPE2SMALLINT(INT64, 4)) },
+    /// \constant eUINT8 - uint8_t value type
+    { MP_ROM_QSTR(MP_QSTR_UINT8), MP_ROM_INT(TYPE2SMALLINT(eUINT8, 4)) },
+    /// \constant eINT8 - int8_t value type
+    { MP_ROM_QSTR(MP_QSTR_INT8), MP_ROM_INT(TYPE2SMALLINT(eINT8, 4)) },
+    /// \constant eUINT16 - uint16_t value type
+    { MP_ROM_QSTR(MP_QSTR_UINT16), MP_ROM_INT(TYPE2SMALLINT(eUINT16, 4)) },
+    /// \constant eINT16 - int16_t value type
+    { MP_ROM_QSTR(MP_QSTR_INT16), MP_ROM_INT(TYPE2SMALLINT(eINT16, 4)) },
+    /// \constant eUINT32 - uint32_t value type
+    { MP_ROM_QSTR(MP_QSTR_UINT32), MP_ROM_INT(TYPE2SMALLINT(eUINT32, 4)) },
+    /// \constant eINT32 - int32_t value type
+    { MP_ROM_QSTR(MP_QSTR_INT32), MP_ROM_INT(TYPE2SMALLINT(eINT32, 4)) },
+    /// \constant eUINT64 - uint64_t value type
+    { MP_ROM_QSTR(MP_QSTR_UINT64), MP_ROM_INT(TYPE2SMALLINT(eUINT64, 4)) },
+    /// \constant eINT64 - int64_t value type
+    { MP_ROM_QSTR(MP_QSTR_INT64), MP_ROM_INT(TYPE2SMALLINT(eINT64, 4)) },
 
     { MP_ROM_QSTR(MP_QSTR_BFUINT8), MP_ROM_INT(TYPE2SMALLINT(BFUINT8, 4)) },
     { MP_ROM_QSTR(MP_QSTR_BFINT8), MP_ROM_INT(TYPE2SMALLINT(BFINT8, 4)) },
@@ -746,23 +747,23 @@ STATIC const mp_rom_map_elem_t mp_module_uctypes_globals_table[] = {
     // C native type aliases. These depend on GCC-compatible predefined
     // preprocessor macros.
     #if __SIZEOF_SHORT__ == 2
-    { MP_ROM_QSTR(MP_QSTR_SHORT), MP_ROM_INT(TYPE2SMALLINT(INT16, 4)) },
-    { MP_ROM_QSTR(MP_QSTR_USHORT), MP_ROM_INT(TYPE2SMALLINT(UINT16, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_SHORT), MP_ROM_INT(TYPE2SMALLINT(eINT16, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_USHORT), MP_ROM_INT(TYPE2SMALLINT(eUINT16, 4)) },
     #endif
     #if __SIZEOF_INT__ == 4
-    { MP_ROM_QSTR(MP_QSTR_INT), MP_ROM_INT(TYPE2SMALLINT(INT32, 4)) },
-    { MP_ROM_QSTR(MP_QSTR_UINT), MP_ROM_INT(TYPE2SMALLINT(UINT32, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_INT), MP_ROM_INT(TYPE2SMALLINT(eINT32, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_UINT), MP_ROM_INT(TYPE2SMALLINT(eUINT32, 4)) },
     #endif
     #if __SIZEOF_LONG__ == 4
-    { MP_ROM_QSTR(MP_QSTR_LONG), MP_ROM_INT(TYPE2SMALLINT(INT32, 4)) },
-    { MP_ROM_QSTR(MP_QSTR_ULONG), MP_ROM_INT(TYPE2SMALLINT(UINT32, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_LONG), MP_ROM_INT(TYPE2SMALLINT(eINT32, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_ULONG), MP_ROM_INT(TYPE2SMALLINT(eUINT32, 4)) },
     #elif __SIZEOF_LONG__ == 8
-    { MP_ROM_QSTR(MP_QSTR_LONG), MP_ROM_INT(TYPE2SMALLINT(INT64, 4)) },
-    { MP_ROM_QSTR(MP_QSTR_ULONG), MP_ROM_INT(TYPE2SMALLINT(UINT64, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_LONG), MP_ROM_INT(TYPE2SMALLINT(eINT64, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_ULONG), MP_ROM_INT(TYPE2SMALLINT(eUINT64, 4)) },
     #endif
     #if __SIZEOF_LONG_LONG__ == 8
-    { MP_ROM_QSTR(MP_QSTR_LONGLONG), MP_ROM_INT(TYPE2SMALLINT(INT64, 4)) },
-    { MP_ROM_QSTR(MP_QSTR_ULONGLONG), MP_ROM_INT(TYPE2SMALLINT(UINT64, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_LONGLONG), MP_ROM_INT(TYPE2SMALLINT(eINT64, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_ULONGLONG), MP_ROM_INT(TYPE2SMALLINT(eUINT64, 4)) },
     #endif
     #endif // MICROPY_PY_UCTYPES_NATIVE_C_TYPES
 

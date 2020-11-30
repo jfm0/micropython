@@ -5,8 +5,8 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
-set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/dev)
-set(MICROPY_FROZEN_MANIFEST ${PROJECT_DIR}/variants/dev/manifest.py)
+set(MICROPY_BOARD_DIR ${MICROPY_DIR}/ports/unix/variants/dev)
+set(MICROPY_FROZEN_MANIFEST ${MICROPY_DIR}/ports/unix/variants/dev/manifest.py)
 
 #=========================================================================
 # Include core source components.
@@ -126,6 +126,7 @@ set(MICROPY_SOURCE_QSTR
 )
 
 #### Custom C modules
+set(LVGL_BINDING On CACHE BOOL "Enable lvgl")
 if(${LVGL_BINDING})
 set(LVGL_BINDINGS_DIR "${MICROPY_DIR}/lib/lv_bindings")
 
@@ -228,6 +229,7 @@ set(LVGL_HEADERS
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(LV_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c")
+set(LV_MPY_C_FILE_MODIFIED "${LVGL_BINDINGS_DIR}/lv_mpy.c")
 #set(LODEPNG_MPY_C_FILE "${CMAKE_BINARY_DIR}/lvgl/lodepng_mpy.c")
 
 # create dummy file if does not exist
@@ -239,15 +241,18 @@ endif()
     # file(TOUCH ${LODEPNG_MPY_C_FILE})
 # endif()
 
+set(LVGL_BINDING_GEN_NEW Off CACHE BOOL "Generate a new lvgl binding (actual lvgl.c file is located in ${LV_MPY_C_FILE_MODIFIED}")
+if(${LVGL_BINDING_GEN_NEW})
 add_custom_target(GenLvglBinding
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
     COMMAND ${CMAKE_C_COMPILER} -E -DLV_COLOR_DEPTH=16 -DLV_COLOR_16_SWAP=1 -I ${LVGL_BINDINGS_DIR}/pycparser/utils/fake_libc_include -I ${LVGL_BINDINGS_DIR} ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c
-    COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lvgl -MP lv -MD ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.json -E ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.c
-    BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c" #${LV_MPY_C_FILE}
+    COMMAND ${Python3_EXECUTABLE} ${MICROPY_DIR}/lib/lv_bindings/gen/gen_mpy.py -M lvgl -MP lv -MD ${CMAKE_BINARY_DIR}/lvgl/lv_mpy.json -E ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${LV_MPY_C_FILE}
+    BYPRODUCTS "${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c" ${LV_MPY_C_FILE}
     COMMENT "Preprocessing Lvgl for generating bindings"
-    DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS} 
+    DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS}
     VERBATIM
 )
+endif()
 
 # add_custom_target(GenLodepngBinding
     # COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
@@ -259,9 +264,10 @@ add_custom_target(GenLvglBinding
     # VERBATIM
 # )
 
-set(LVGL_SOURCES
-    ${LV_MPY_C_FILE}
-    #${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
+# These are sources that can contain QSTR
+set(LVGL_SOURCES_QSTR
+    ${LV_MPY_C_FILE_MODIFIED}
+#${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modrtch.c
@@ -301,6 +307,10 @@ set(LVGL_SOURCES
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/ft5336.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/modrk043fn48h.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/stm32746g_discovery_ts.c
+)
+
+set(LVGL_SOURCES
+    ${LVGL_SOURCES_QSTR}
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_disp_template.c
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_fs_template.c
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_indev_template.c
@@ -420,7 +430,7 @@ set(LVGL_INCLUDES
     ${LVGL_BINDINGS_DIR}/
     ${LVGL_BINDINGS_DIR}/lvgl/src)
 
-list(APPEND MICROPY_SOURCE_QSTR ${LVGL_SOURCES})
+list(APPEND MICROPY_SOURCE_QSTR ${LVGL_SOURCES_QSTR})
 #message(WARNING "MICROPY_SOURCE_QSTR=${MICROPY_SOURCE_QSTR}")
 
 endif()
@@ -479,7 +489,7 @@ target_compile_options(${MICROPY_TARGET} PUBLIC
     -Wno-deprecated-declarations
     -Wno-missing-field-initializers
 )
-if(${LVGL_BINDING})
+if(${LVGL_BINDING_GEN_NEW})
 add_dependencies(${MICROPY_TARGET} GenLvglBinding) #GenLodepngBinding
 endif()
 

@@ -51,3 +51,9 @@ if(LIBM)
 endif()
 
 #add_dependencies(mpy-cross MICROPY_FORCE_BUILD)
+
+install(
+  FILES ${CMAKE_BINARY_DIR}/mpy-cross
+  DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}
+)
+

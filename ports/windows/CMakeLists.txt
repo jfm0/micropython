@@ -5,7 +5,7 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set location of base MicroPython directory, and this port's directory.
 get_filename_component(MICROPY_DIR ${PROJECT_DIR}/../.. ABSOLUTE)
 set(MICROPY_PORT_DIR ${PROJECT_DIR})
-#set(MICROPY_BOARD_DIR ${PROJECT_DIR}/variants/standard)
+#set(MICROPY_BOARD_DIR ${MICROPY_DIR}/ports/unix/variants/dev)
 set(MICROPY_FROZEN_MANIFEST ${MICROPY_DIR}/ports/unix/variants/dev/manifest.py)
 
 #=========================================================================
@@ -106,6 +106,9 @@ set(MICROPY_SOURCE_PORT
     ${MICROPY_DIR}/ports/windows/fmode.c
     ${MICROPY_DIR}/ports/windows/msvc/dirent.c
     ${MICROPY_DIR}/ports/windows/msvc/gettimeofday.c
+    ${MICROPY_DIR}/ports/windows/msvc/gettimeofday.c
+    ${MICROPY_DIR}/ports/windows/msvc/pthread.c
+    ${MICROPY_DIR}/ports/windows/msvc/pthread.h
     # ==================== unix
     ${MICROPY_DIR}/ports/unix/main.c
     ${MICROPY_DIR}/ports/unix/gccollect.c
@@ -253,6 +256,8 @@ endif()
     # file(TOUCH ${LODEPNG_MPY_C_FILE})
 # endif()
 
+set(LVGL_BINDING_GEN_NEW Off CACHE BOOL "Generate a new lvgl binding (actual lvgl.c file is located in ${LV_MPY_C_FILE_MODIFIED}")
+if(${LVGL_BINDING_GEN_NEW})
 add_custom_target(GenLvglBinding
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
     COMMAND ${CMAKE_C_COMPILER} -E -DLV_COLOR_DEPTH=16 -DLV_COLOR_16_SWAP=1 -I ${LVGL_BINDINGS_DIR}/pycparser/utils/fake_libc_include -I ${LVGL_BINDINGS_DIR} ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h > ${CMAKE_BINARY_DIR}/lvgl/lvgl.pp.c
@@ -262,6 +267,7 @@ add_custom_target(GenLvglBinding
     DEPENDS ${LVGL_BINDINGS_DIR}/lvgl/lvgl.h #${LVGL_HEADERS}
     VERBATIM
 )
+endif()
 
 # add_custom_target(GenLodepngBinding
     # COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lvgl
@@ -273,9 +279,10 @@ add_custom_target(GenLvglBinding
     # VERBATIM
 # )
 
-set(LVGL_SOURCES
+# These are sources that can contain QSTR
+set(LVGL_SOURCES_QSTR
     ${LV_MPY_C_FILE_MODIFIED}
-    #${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
+#${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modrtch.c
@@ -315,6 +322,10 @@ set(LVGL_SOURCES
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/ft5336.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/modrk043fn48h.c
     # ${LVGL_BINDINGS_DIR}/driver/stm32/STM32F7DISC/stm32746g_discovery_ts.c
+)
+
+set(LVGL_SOURCES
+    ${LVGL_SOURCES_QSTR}
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_disp_template.c
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_fs_template.c
     # ${LVGL_BINDINGS_DIR}/lvgl/examples/porting/lv_port_indev_template.c
@@ -434,7 +445,7 @@ set(LVGL_INCLUDES
     ${LVGL_BINDINGS_DIR}/
     ${LVGL_BINDINGS_DIR}/lvgl/src)
 
-list(APPEND MICROPY_SOURCE_QSTR ${LVGL_SOURCES})
+list(APPEND MICROPY_SOURCE_QSTR ${LVGL_SOURCES_QSTR})
 #message(WARNING "MICROPY_SOURCE_QSTR=${MICROPY_SOURCE_QSTR}")
 
 endif()
@@ -495,7 +506,7 @@ target_compile_options(${MICROPY_TARGET} PUBLIC
     #-Wno-deprecated-declarations
     #-Wno-missing-field-initializers
 )
-if(${LVGL_BINDING})
+if(${LVGL_BINDING_GEN_NEW})
 add_dependencies(${MICROPY_TARGET} GenLvglBinding) #GenLodepngBinding
 endif()
 
@@ -509,25 +520,30 @@ find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 target_link_libraries(${MICROPY_TARGET} SDL2::SDL2)#${SDL2_LIBRARIES})
 
-add_custom_command(TARGET ${MICROPY_TARGET} POST_BUILD        # Adds a post-build event to MyTest
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-        "${SDL2_DIR}/../bin/SDL2.dll"      # <--this is in-file
-        $<TARGET_FILE_DIR:${MICROPY_TARGET}>)  
+# add_custom_command(TARGET ${MICROPY_TARGET} POST_BUILD        # Adds a post-build event to MyTest
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        # "${SDL2_DIR}/../bin/SDL2.dll"      # <--this is in-file
+        # $<TARGET_FILE_DIR:${MICROPY_TARGET}>)  
+
+# add_custom_command(TARGET ${MICROPY_TARGET} POST_BUILD        # Adds a post-build event to MyTest
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        # "${SDL2_DIR}/../bin/SDL2d.dll"      # <--this is in-file
+        # $<TARGET_FILE_DIR:${MICROPY_TARGET}>)  
 
 # set(THREADS_PREFER_PTHREAD_FLAG ON)
 # find_package(Threads REQUIRED)
 # target_link_libraries(${MICROPY_TARGET} Threads::Threads)
-find_package(pthreads REQUIRED)
+#find_package(pthreads REQUIRED)
 #message(WARNING "PTHREAD_INCLUDE_DIRS=${PTHREAD_INCLUDE_DIRS}")
 #message(WARNING "PTHREAD_LIBRARIES=${PTHREAD_LIBRARIES}")
 #message(WARNING "PTHREAD_DEFINITIONS=${PTHREAD_DEFINITIONS}")
 #message(WARNING "CMAKE_CL_64=${CMAKE_CL_64}")
 
-include_directories(${PTHREAD_INCLUDE_DIRS})
-target_link_libraries(${MICROPY_TARGET} ${PTHREAD_LIBRARIES})
-target_compile_definitions(${MICROPY_TARGET} PUBLIC
-    ${PTHREAD_DEFINITIONS}
-)
+#include_directories(${PTHREAD_INCLUDE_DIRS})
+#target_link_libraries(${MICROPY_TARGET} ${PTHREAD_LIBRARIES})
+# target_compile_definitions(${MICROPY_TARGET} PUBLIC
+    # ${PTHREAD_DEFINITIONS}
+# )
 
 include(CheckLibraryExists)
 check_library_exists(m pow "" LIBM) # math library

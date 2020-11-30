@@ -18,13 +18,13 @@
 
 /**************************** DATA TYPES ****************************/
 typedef unsigned char BYTE;             // 8-bit byte
-typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+typedef unsigned int  WORD_t;           // 32-bit word, change to "long" for 16-bit machines - JFM - renamed from WORD to avoid conflict with windows.h
 
 typedef struct {
 	BYTE data[64];
-	WORD datalen;
+        WORD_t datalen;
 	unsigned long long bitlen;
-	WORD state[8];
+        WORD_t state[8];
 } CRYAL_SHA256_CTX;
 
 /*********************** FUNCTION DECLARATIONS **********************/
