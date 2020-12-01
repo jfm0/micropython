@@ -45,10 +45,23 @@ int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routin
     if (thread == NULL || start_routine == NULL)
         return 1;
 
-    *thread = CreateThread(NULL, attr->stack_size, start_routine, arg, 0, NULL);
-    if (*thread == NULL)
+    DWORD threadId = 0;
+    HANDLE threadHandle = CreateThread(NULL, attr->stack_size, start_routine, arg, 0, &threadId);
+    if (threadHandle == NULL)
         return 1;
+
+    *thread = threadId;
     return 0;
+}
+
+int pthread_cancel(pthread_t thread)
+{
+    HANDLE threadHandle = OpenThread(THREAD_TERMINATE, FALSE, thread);
+    if(TerminateThread(threadHandle, 0))
+    {
+        return 0;
+    }
+    return 1;
 }
 
 int pthread_equal(pthread_t t1, pthread_t t2)
@@ -58,7 +71,7 @@ int pthread_equal(pthread_t t1, pthread_t t2)
 
 pthread_t pthread_self(void)
 {
-    return GetCurrentThread();
+    return GetCurrentThreadId();
 }
 
 

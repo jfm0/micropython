@@ -36,8 +36,11 @@
 
 #include <fcntl.h>
 #include <signal.h>
+#include <pthread.h>
+#ifndef _MSC_VER
 #include <sched.h>
 #include <semaphore.h>
+#endif
 
 #include "lib/utils/gchelper.h"
 
@@ -57,6 +60,7 @@ typedef struct _thread_t {
     pthread_t id;           // system id of thread
     int ready;              // whether the thread is ready and running
     void *arg;              // thread Python args, a GC root pointer
+    mp_state_thread_t *state; //< was added to try to stop threads gracefully (didn't work)
     struct _thread_t *next;
 } thread_t;
 
@@ -68,6 +72,7 @@ STATIC pthread_key_t tls_key;
 STATIC pthread_mutex_t thread_mutex;
 STATIC thread_t *thread;
 
+#ifndef _WIN32
 // this is used to synchronise the signal handler of the thread
 // it's needed because we can't use any pthread calls in a signal handler
 #if defined(__APPLE__)
@@ -75,6 +80,7 @@ STATIC char thread_signal_done_name[25];
 STATIC sem_t *thread_signal_done_p;
 #else
 STATIC sem_t thread_signal_done;
+#endif
 #endif
 
 void mp_thread_unix_begin_atomic_section(void) {
@@ -123,10 +129,12 @@ void mp_thread_init(void) {
     // create first entry in linked list of all threads
     thread = malloc(sizeof(thread_t));
     thread->id = pthread_self();
+    thread->state = &mp_state_ctx.thread;
     thread->ready = 1;
     thread->arg = NULL;
     thread->next = NULL;
 
+#ifndef _WIN32
     #if defined(__APPLE__)
     snprintf(thread_signal_done_name, sizeof(thread_signal_done_name), "micropython_sem_%d", (int)thread->id);
     thread_signal_done_p = sem_open(thread_signal_done_name, O_CREAT | O_EXCL, 0666, 0);
@@ -134,7 +142,6 @@ void mp_thread_init(void) {
     sem_init(&thread_signal_done, 0, 0);
     #endif
 
-#ifndef _WIN32
     // enable signal handler for garbage collection
     struct sigaction sa;
     sa.sa_flags = SA_SIGINFO;
@@ -153,10 +160,12 @@ void mp_thread_deinit(void) {
         free(th);
     }
     mp_thread_unix_end_atomic_section();
+#ifndef _WIN32
     #if defined(__APPLE__)
     sem_close(thread_signal_done_p);
     sem_unlink(thread_signal_done_name);
     #endif
+#endif
     assert(pthread_equal(thread->id,pthread_self()));
     free(thread);
 }
@@ -179,12 +188,12 @@ void mp_thread_gc_others(void) {
         }
 #ifndef _WIN32
         pthread_kill(th->id, MP_THREAD_GC_SIGNAL);
-#endif
         #if defined(__APPLE__)
         sem_wait(thread_signal_done_p);
         #else
         sem_wait(&thread_signal_done);
         #endif
+#endif
     }
     mp_thread_unix_end_atomic_section();
 }
@@ -202,6 +211,7 @@ void mp_thread_start(void) {
     mp_thread_unix_begin_atomic_section();
     for (thread_t *th = thread; th != NULL; th = th->next) {
         if (pthread_equal(th->id,pthread_self())) {
+            th->state = mp_thread_get_state();
             th->ready = 1;
             break;
         }

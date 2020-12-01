@@ -29,7 +29,7 @@
 
 typedef CRITICAL_SECTION pthread_mutex_t;
 typedef void *pthread_mutexattr_t;
-typedef HANDLE pthread_t;
+typedef DWORD pthread_t;
 typedef DWORD pthread_key_t;
 typedef struct {
     size_t stack_size;
@@ -54,6 +54,8 @@ enum
 };
 
 int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
+int pthread_cancel(pthread_t thread); //< Not implemented correctly
+
 int pthread_equal(pthread_t t1, pthread_t t2);
 pthread_t pthread_self(void);
 
