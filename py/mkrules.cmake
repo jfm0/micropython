@@ -54,13 +54,14 @@ add_custom_command(
 )
 
 # Generate moduledefs.h
-# This is currently hard-coded to support modarray.c only, because makemoduledefs.py doesn't support absolute paths
-
+set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} ${MICROPY_PY_DIR}/modarray.c)
+message(WARNING "MICROPY_SOURCE_MP_REGISTER_MODULE=${MICROPY_SOURCE_MP_REGISTER_MODULE}")
 add_custom_command(
     OUTPUT ${MICROPY_MODULEDEFS}
-    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makemoduledefs.py --vpath="." ../../../py/modarray.c > ${MICROPY_MODULEDEFS}
+    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makemoduledefs_cmake.py --input "${MICROPY_SOURCE_MP_REGISTER_MODULE}" --output ${MICROPY_MODULEDEFS}
     DEPENDS ${MICROPY_MPVERSION}
-        ${MICROPY_SOURCE_QSTR}
+            ${MICROPY_SOURCE_MP_REGISTER_MODULE}
+            ${MICROPY_PY_DIR}/makemoduledefs_cmake.py
 )
 
 # Generate qstrs
