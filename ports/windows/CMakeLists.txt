@@ -65,15 +65,19 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
         MICROPY_PY_THREAD=1
         MICROPY_PY_THREAD_GIL=0
         MPZ_DIG_SIZE=16
-        MICROPY_PY_EXAMPLE=1
+        #MICROPY_PY_EXAMPLE=1
+        MICROPY_PY_FULL_EXAMPLE=1
 )
+
+set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} 
+    #${MICROPY_DIR}/../micropython-extmod-generator/example/modexample.c
+    ${MICROPY_DIR}/../custom_source/full_example/modfull_example.c)
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA
 #    ${MICROPY_DIR}/extmod/modonewire.c
     ${MICROPY_DIR}/extmod/machine_pinbase.c
-    ${MICROPY_DIR}/../micropython-extmod-generator/example/modexample.c
+    ${MICROPY_SOURCE_MP_REGISTER_MODULE}
 )
-set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} ${MICROPY_DIR}/../micropython-extmod-generator/example/modexample.c)
 
 set(MICROPY_SOURCE_LIB
     ${MICROPY_DIR}/lib/littlefs/lfs1.c

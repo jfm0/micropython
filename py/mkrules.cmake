@@ -58,7 +58,9 @@ set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} ${MIC
 message(WARNING "MICROPY_SOURCE_MP_REGISTER_MODULE=${MICROPY_SOURCE_MP_REGISTER_MODULE}")
 add_custom_command(
     OUTPUT ${MICROPY_MODULEDEFS}
-    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makemoduledefs_cmake.py --input "${MICROPY_SOURCE_MP_REGISTER_MODULE}" --output ${MICROPY_MODULEDEFS}
+    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makemoduledefs_cmake.py --input "${MICROPY_SOURCE_MP_REGISTER_MODULE}" --output ${MICROPY_MODULEDEFS}.temp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MICROPY_MODULEDEFS}.temp ${MICROPY_MODULEDEFS}
+    BYPRODUCTS ${MICROPY_MODULEDEFS}.temp
     DEPENDS ${MICROPY_MPVERSION}
             ${MICROPY_SOURCE_MP_REGISTER_MODULE}
             ${MICROPY_PY_DIR}/makemoduledefs_cmake.py
@@ -71,7 +73,9 @@ add_custom_command(
 # it was last run, but it looks like it's not possible to specify that with cmake.
 add_custom_command(
     OUTPUT ${MICROPY_QSTR_DEFS_LAST}
-    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makeqstrdefs.py pp ${CMAKE_C_COMPILER} -E output ${MICROPY_GENHDR_DIR}/qstr.i.last cflags ${MICROPY_CPP_FLAGS} -DNO_QSTR sources ${MICROPY_SOURCE_QSTR}
+    COMMAND ${Python3_EXECUTABLE} ${MICROPY_PY_DIR}/makeqstrdefs.py pp ${CMAKE_C_COMPILER} -E output ${MICROPY_QSTR_DEFS_LAST}.temp cflags ${MICROPY_CPP_FLAGS} -DNO_QSTR sources ${MICROPY_SOURCE_QSTR}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MICROPY_QSTR_DEFS_LAST}.temp ${MICROPY_QSTR_DEFS_LAST}
+    BYPRODUCTS ${MICROPY_QSTR_DEFS_LAST}.temp 
     DEPENDS ${MICROPY_MODULEDEFS}
         ${MICROPY_SOURCE_QSTR}
     VERBATIM
