@@ -65,13 +65,27 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
         MICROPY_PY_THREAD=1
         MICROPY_PY_THREAD_GIL=0
         MPZ_DIG_SIZE=16
-        #MICROPY_PY_EXAMPLE=1
-        MICROPY_PY_FULL_EXAMPLE=1
+)
+
+set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE 
+    #MICROPY_PY_EXAMPLE=1
+    MICROPY_PY_FULL_EXAMPLE=1
+    MICROPY_PY_BTLITE=1
+)
+
+set(MICROPY_INCLUDES_MP_REGISTER_MODULE 
+    ${MICROPY_DIR}/../custom_source/btlite
 )
 
 set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} 
     #${MICROPY_DIR}/../micropython-extmod-generator/example/modexample.c
-    ${MICROPY_DIR}/../custom_source/full_example/modfull_example.c)
+    # bluetooth 'lite'
+    ${MICROPY_DIR}/../custom_source/btlite/modbtlite.c
+    ${MICROPY_DIR}/../custom_source/btlite/hal_btlite.h
+    ${MICROPY_DIR}/../custom_source/btlite/windows/hal_btlite.c
+    ####
+    ${MICROPY_DIR}/../custom_source/full_example/modfull_example.c
+)
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA
 #    ${MICROPY_DIR}/extmod/modonewire.c
@@ -255,13 +269,9 @@ set(LV_MPY_C_FILE_MODIFIED "${LVGL_BINDINGS_DIR}/lv_mpy.c")
 
 # create dummy file if does not exist
 if(NOT EXISTS ${LV_MPY_C_FILE})
-    #message(WARNING "LV_MPY_C_FILE=${LV_MPY_C_FILE} not exists?")
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lvgl)
     file(TOUCH ${LV_MPY_C_FILE})
 endif()
-# if(NOT EXISTS ${LODEPNG_MPY_C_FILE})
-    # file(TOUCH ${LODEPNG_MPY_C_FILE})
-# endif()
 
 set(LVGL_BINDING_GEN_NEW Off CACHE BOOL "Generate a new lvgl binding (actual lvgl.c file is located in ${LV_MPY_C_FILE_MODIFIED}")
 if(${LVGL_BINDING_GEN_NEW})
@@ -289,7 +299,8 @@ endif()
 # These are sources that can contain QSTR
 set(LVGL_SOURCES_QSTR
     ${LV_MPY_C_FILE_MODIFIED}
-#${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
+#============== esp32 ========================
+	#${LVGL_BINDINGS_DIR}/driver/esp32/espidf.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modILI9341.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modlvesp32.c
     # ${LVGL_BINDINGS_DIR}/driver/esp32/modrtch.c
@@ -298,18 +309,18 @@ set(LVGL_SOURCES_QSTR
     ${LVGL_BINDINGS_DIR}/driver/SDL/modSDL.c
     ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_monitor.c
     ${LVGL_BINDINGS_DIR}/driver/SDL/SDL_mouse.c
+#============== other ========================
     #${LVGL_BINDINGS_DIR}/driver/linux/modfb.c
     ${LVGL_BINDINGS_DIR}/driver/generic/modlvindev.c
 #============== lodepng ========================
     # ${LODEPNG_MPY_C_FILE}
     # ${LVGL_BINDINGS_DIR}/driver/png/mp_lodepng.c
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng.cpp
+    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_benchmark.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_fuzzer.cpp
+    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_unittest.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_util.cpp
-#============== lodepng ========================
-    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_benchmark.cpp
-    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/lodepng_unittest.cpp
-    #${LVGL_BINDINGS_DIR}/driver/png/lodepng/pngdetail.cpp
+    # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/pngdetail.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_4bit_palette.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_bmp2png.cpp
     # ${LVGL_BINDINGS_DIR}/driver/png/lodepng/examples/example_decode.c
@@ -468,6 +479,7 @@ target_sources(${MICROPY_TARGET}
         ${MICROPY_SOURCE_PORT}
         ${LVGL_SOURCES}
 )
+
 target_include_directories(${MICROPY_TARGET} 
     PRIVATE 
         ${MICROPY_DIR}
@@ -475,6 +487,7 @@ target_include_directories(${MICROPY_TARGET}
         #${MICROPY_BOARD_DIR}
         ${CMAKE_BINARY_DIR}
         ${LVGL_INCLUDES}
+		${MICROPY_INCLUDES_MP_REGISTER_MODULE}
         ${MICROPY_DIR}/ports/unix
         ${MICROPY_DIR}/ports/windows/msvc
 )
@@ -495,6 +508,7 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
     FFCONF_H=\"${MICROPY_OOFATFS_DIR}/ffconf.h\"
     LFS1_NO_MALLOC LFS1_NO_DEBUG LFS1_NO_WARN LFS1_NO_ERROR LFS1_NO_ASSERT
     LFS2_NO_MALLOC LFS2_NO_DEBUG LFS2_NO_WARN LFS2_NO_ERROR LFS2_NO_ASSERT
+    ${MICROPY_DEFINITIONS_MP_REGISTER_MODULE}
     # use vfs's functions for import stat and builtin open
     mp_import_stat=mp_vfs_import_stat
     mp_builtin_open=mp_vfs_open
