@@ -22,10 +22,11 @@ set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE}
     # bluetooth 'lite'
     ${MICROPY_DIR}/../custom_source/btlite/modbtlite.c
     ${MICROPY_DIR}/../custom_source/btlite/hal_btlite.h
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs_demo.c
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.c
     ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.h
+    ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.c
     ${MICROPY_DIR}/../custom_source/btlite/esp32/hal_btlite.c
+    ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.h
+    ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.c
 )
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA

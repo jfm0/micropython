@@ -78,10 +78,25 @@ void mp_task(void *pvParameter) {
     #endif
     uart_init();
 
+    printf("%d\n", __LINE__);
+    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    size_t spiram_size = esp_spiram_get_size();
+    printf("spiram_size=%d\n", spiram_size);
+    // allocate up to 75%(3/4) of heap (example: 12MB out of 16MB), from SPIRAM if possible
+    uint32_t caps = MALLOC_CAP_8BIT;
+#if CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_SPIRAM_SUPPORT
+    caps = caps | MALLOC_CAP_SPIRAM;
+#endif
+    size_t total_heap_size = heap_caps_get_free_size(caps);
+    size_t max_mp_task_heap_size = (3*total_heap_size)/4;
+    size_t mp_task_heap_size = MIN(max_mp_task_heap_size, heap_caps_get_largest_free_block(caps));
+    void *mp_task_heap = heap_caps_malloc(mp_task_heap_size, caps);
+    printf("mp_task_heap=0x%x heap size=%d\n", (uint32_t)mp_task_heap, mp_task_heap_size);
+#if 0
     // TODO: CONFIG_SPIRAM_SUPPORT is for 3.3 compatibility, remove after move to 4.0.
     #if CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_SPIRAM_SUPPORT
     // Try to use the entire external SPIRAM directly for the heap
-    size_t mp_task_heap_size;
     void *mp_task_heap = (void *)0x3f800000;
     switch (esp_spiram_get_chip_size()) {
         case ESP_SPIRAM_SIZE_16MBITS:
@@ -102,6 +117,7 @@ void mp_task(void *pvParameter) {
     size_t mp_task_heap_size = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
     void *mp_task_heap = malloc(mp_task_heap_size);
     #endif
+#endif
 
 soft_reset:
     // initialise the stack pointer for the main thread
