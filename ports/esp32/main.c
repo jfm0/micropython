@@ -58,7 +58,7 @@
 #include "modnetwork.h"
 #include "mpthreadport.h"
 
-#if MICROPY_BLUETOOTH_NIMBLE
+#if MICROPY_PY_BLUETOOTH
 #include "extmod/modbluetooth.h"
 #endif
 
@@ -155,7 +155,7 @@ soft_reset:
         }
     }
 
-    #if MICROPY_BLUETOOTH_NIMBLE
+    #if MICROPY_PY_BLUETOOTH
     mp_bluetooth_deinit();
     #endif
 
@@ -178,12 +178,30 @@ soft_reset:
     goto soft_reset;
 }
 
+void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                    signed char *pcTaskName )
+{
+    printf("%s Overflow\n", pcTaskName);
+    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+}
+
+void esp_alloc_failed_hook(size_t size, uint32_t caps, const char * function_name)
+{
+    printf("esp_alloc_failed_hook(%d, 0x%x, %s)\n", size, caps, function_name);
+    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+}
+
 void app_main(void) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         nvs_flash_erase();
         nvs_flash_init();
     }
+
+    heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook);
+
+
+
     xTaskCreatePinnedToCore(mp_task, "mp_task", MP_TASK_STACK_SIZE / sizeof(StackType_t), NULL, MP_TASK_PRIORITY, &mp_main_task_handle, MP_TASK_COREID);
 }
 

@@ -12,6 +12,9 @@ include(${MICROPY_DIR}/extmod/extmod.cmake)
 #=========================================================================
 set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE 
     MICROPY_PY_BTLITE=1
+    MICROPY_PY_BLUETOOTH=1
+    MICROPY_BLUETOOTH_ESP32=1
+    MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE=1 # gatts
 )
 
 set(MICROPY_INCLUDES_MP_REGISTER_MODULE 
@@ -27,7 +30,15 @@ set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE}
     ${MICROPY_DIR}/../custom_source/btlite/esp32/hal_btlite.c
     ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.h
     ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.c
-)
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/ble.hpp
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/ble.cpp
+    
+    #bluetooth
+    ${MICROPY_DIR}/extmod/modbluetooth.c
+    ${MICROPY_DIR}/extmod/modbluetooth.h
+    ${MICROPY_DIR}/../custom_source/bluetooth_esp32/modbluetooth_esp32.h
+    ${MICROPY_DIR}/../custom_source/bluetooth_esp32/modbluetooth_esp32.c
+    )
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA
     ${MICROPY_DIR}/extmod/modonewire.c
@@ -74,9 +85,9 @@ set(MICROPY_SOURCE_PORT
     ${PROJECT_DIR}/machine_pwm.c
     ${PROJECT_DIR}/machine_uart.c
     ${PROJECT_DIR}/modmachine.c
-    ${PROJECT_DIR}/modnetwork.c
-    ${PROJECT_DIR}/network_lan.c
-    ${PROJECT_DIR}/network_ppp.c
+    #${PROJECT_DIR}/modnetwork.c
+    #${PROJECT_DIR}/network_lan.c
+    #${PROJECT_DIR}/network_ppp.c
     ${PROJECT_DIR}/mpnimbleport.c
     ${PROJECT_DIR}/modsocket.c
     ${PROJECT_DIR}/modesp.c
@@ -405,6 +416,7 @@ set(IDF_COMPONENTS
     esp_common
     esp_eth
     esp_event
+    esp_ipc
     esp_netif
     esp_ringbuf
     esp_rom

@@ -782,6 +782,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(bluetooth_ble_gattc_exchange_mtu_obj, bluetooth
 
 #endif // MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE
 
+#if MICROPY_BLUETOOTH_ESP32
+extern mp_obj_t bluetooth_ble_gap_config_adv_data(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(bluetooth_ble_gap_config_adv_data_obj, 1, bluetooth_ble_gap_config_adv_data);
+#endif
+
 // ----------------------------------------------------------------------------
 // Bluetooth object: Definition
 // ----------------------------------------------------------------------------
@@ -793,6 +798,9 @@ STATIC const mp_rom_map_elem_t bluetooth_ble_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_irq), MP_ROM_PTR(&bluetooth_ble_irq_obj) },
     // GAP
     { MP_ROM_QSTR(MP_QSTR_gap_advertise), MP_ROM_PTR(&bluetooth_ble_gap_advertise_obj) },
+    #if MICROPY_BLUETOOTH_ESP32
+    { MP_ROM_QSTR(MP_QSTR_gap_config_adv_data), MP_ROM_PTR(&bluetooth_ble_gap_config_adv_data_obj) },
+    #endif
     #if MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE
     { MP_ROM_QSTR(MP_QSTR_gap_connect), MP_ROM_PTR(&bluetooth_ble_gap_connect_obj) },
     { MP_ROM_QSTR(MP_QSTR_gap_scan), MP_ROM_PTR(&bluetooth_ble_gap_scan_obj) },
