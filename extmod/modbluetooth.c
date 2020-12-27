@@ -82,7 +82,7 @@ STATIC mp_obj_t bluetooth_handle_errno(int err) {
 // UUID object
 // ----------------------------------------------------------------------------
 
-STATIC mp_obj_t bluetooth_uuid_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+mp_obj_t bluetooth_uuid_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     (void)type;
 
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
@@ -236,6 +236,11 @@ STATIC const mp_obj_type_t bluetooth_uuid_type = {
     .buffer_p = { .get_buffer = bluetooth_uuid_get_buffer },
 };
 
+bool mp_bluetooth_obj_is_uuid(mp_obj_t uuid_in)
+{
+    return mp_obj_is_type(uuid_in, &bluetooth_uuid_type);
+}
+
 // ----------------------------------------------------------------------------
 // Bluetooth object: General
 // ----------------------------------------------------------------------------
@@ -268,6 +273,9 @@ STATIC mp_obj_t bluetooth_ble_make_new(const mp_obj_type_t *type, size_t n_args,
         // Allocate the default ringbuf.
         ringbuf_alloc(&o->ringbuf, MICROPY_PY_BLUETOOTH_RINGBUF_SIZE);
 
+        // reset config
+        MP_STATE_VM(bluetooth_config) = mp_obj_new_dict(0);
+
         MP_STATE_VM(bluetooth) = MP_OBJ_FROM_PTR(o);
     }
     return MP_STATE_VM(bluetooth);
@@ -291,32 +299,47 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(bluetooth_ble_active_obj, 1, 2, bluet
 STATIC mp_obj_t bluetooth_ble_config(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     mp_obj_bluetooth_ble_t *self = MP_OBJ_TO_PTR(args[0]);
 
-    if (kwargs->used == 0) {
-        // Get config value
-        if (n_args != 2) {
-            mp_raise_TypeError(MP_ERROR_TEXT("must query one param"));
+    mp_obj_t config_dict = MP_STATE_VM(bluetooth_config);
+    if(0 == mp_obj_dict_len(config_dict))
+    {
+        if (!mp_bluetooth_is_active()) {
+            mp_raise_OSError(MP_ENODEV);
         }
 
-        switch (mp_obj_str_get_qstr(args[1])) {
-            case MP_QSTR_gap_name: {
-                const uint8_t *buf;
-                size_t len = mp_bluetooth_gap_get_device_name(&buf);
-                return mp_obj_new_bytes(buf, len);
-            }
-            case MP_QSTR_mac: {
-                uint8_t addr_type;
-                uint8_t addr[6];
-                mp_bluetooth_get_current_address(&addr_type, addr);
-                mp_obj_t items[] = { MP_OBJ_NEW_SMALL_INT(addr_type), mp_obj_new_bytes(addr, MP_ARRAY_SIZE(addr)) };
-                return mp_obj_new_tuple(2, items);
-            }
-            case MP_QSTR_rxbuf:
-                return mp_obj_new_int(self->ringbuf.size);
-            case MP_QSTR_mtu:
-                return mp_obj_new_int(mp_bluetooth_get_preferred_mtu());
-            default:
-                mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+        // store all settings
+        // 'gap_name'
+        {
+            const uint8_t *buf;
+            size_t len = mp_bluetooth_gap_get_device_name(&buf);
+            mp_obj_dict_store(config_dict, MP_OBJ_NEW_QSTR(MP_QSTR_gap_name), mp_obj_new_bytes(buf, len));
         }
+        // 'mac'
+        {
+            uint8_t addr_type;
+            uint8_t addr[6];
+            mp_bluetooth_get_current_address(&addr_type, addr);
+            mp_obj_t items[] = { MP_OBJ_NEW_SMALL_INT(addr_type), mp_obj_new_bytes(addr, MP_ARRAY_SIZE(addr)) };
+            mp_obj_dict_store(config_dict, MP_OBJ_NEW_QSTR(MP_QSTR_mac), mp_obj_new_tuple(2, items));
+        }
+        // 'rxbuf'
+        mp_obj_dict_store(config_dict, MP_OBJ_NEW_QSTR(MP_QSTR_rxbuf), mp_obj_new_int(self->ringbuf.size));
+        // 'mtu
+        mp_obj_dict_store(config_dict, MP_OBJ_NEW_QSTR(MP_QSTR_mtu), mp_obj_new_int(mp_bluetooth_get_preferred_mtu()));
+
+        // port config
+        mp_bluetooth_ble_config_init_port(config_dict);
+    }
+
+    if (kwargs->used == 0) {
+        if(n_args == 1) // returns all config params in dict
+        {
+            return config_dict;
+        }
+        if (n_args == 2) // Get config value
+        {
+            return mp_obj_dict_get(config_dict, args[1]);
+        }
+        mp_raise_TypeError(MP_ERROR_TEXT("must query one param"));
     } else {
         // Set config value(s)
         if (n_args != 1) {
@@ -326,7 +349,8 @@ STATIC mp_obj_t bluetooth_ble_config(size_t n_args, const mp_obj_t *args, mp_map
         for (size_t i = 0; i < kwargs->alloc; ++i) {
             if (MP_MAP_SLOT_IS_FILLED(kwargs, i)) {
                 mp_map_elem_t *e = &kwargs->table[i];
-                switch (mp_obj_str_get_qstr(e->key)) {
+                qstr qstr_key = mp_obj_str_get_qstr(e->key);
+                switch (qstr_key) {
                     case MP_QSTR_gap_name: {
                         mp_buffer_info_t bufinfo;
                         mp_get_buffer_raise(e->value, &bufinfo, MP_BUFFER_READ);
@@ -377,8 +401,13 @@ STATIC mp_obj_t bluetooth_ble_config(size_t n_args, const mp_obj_t *args, mp_map
                         break;
                     }
                     default:
-                        mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+                        if( 0 != mp_bluetooth_ble_config_set_port(qstr_key, e->value) )
+                        {
+                            mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+                        }
                 }
+                // setting must be valid if flow reached here, store it
+                mp_obj_dict_store(config_dict, e->key, e->value);
             }
         }
 

@@ -198,6 +198,7 @@ typedef struct _mp_state_vm_t {
 
     #if MICROPY_PY_BLUETOOTH
     mp_obj_t bluetooth;
+    mp_obj_t bluetooth_config; //< dict containing all bluetooth config settings
     #if MICROPY_BLUETOOTH_ESP32
     struct _mp_esp32_root_pointers_t *esp32_root_pointers;
     #endif

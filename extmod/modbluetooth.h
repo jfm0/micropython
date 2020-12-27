@@ -147,6 +147,7 @@ typedef struct {
     uint8_t data[16];
 } mp_obj_bluetooth_uuid_t;
 
+bool mp_bluetooth_obj_is_uuid(mp_obj_t uuid_in);
 //////////////////////////////////////////////////////////////
 // API implemented by ports (i.e. called from modbluetooth.c):
 
@@ -167,6 +168,12 @@ int mp_bluetooth_init(void);
 
 // Disables the Bluetooth stack. Is a no-op when not enabled.
 void mp_bluetooth_deinit(void);
+
+// Reads and stores into config_dict all port specific config keys->values
+void mp_bluetooth_ble_config_init_port(mp_obj_t config_dict);
+
+// Update port specific config with value, returns 0 if successful
+int mp_bluetooth_ble_config_set_port(qstr key, mp_obj_t value);
 
 // Returns true when the Bluetooth stack is active.
 bool mp_bluetooth_is_active(void);
