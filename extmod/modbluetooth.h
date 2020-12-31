@@ -148,6 +148,10 @@ typedef struct {
 } mp_obj_bluetooth_uuid_t;
 
 bool mp_bluetooth_obj_is_uuid(mp_obj_t uuid_in);
+inline uint16_t get_uuid16(const mp_obj_bluetooth_uuid_t *uuid) {
+    return (uuid->data[1] << 8) | uuid->data[0];
+}
+
 //////////////////////////////////////////////////////////////
 // API implemented by ports (i.e. called from modbluetooth.c):
 
@@ -252,6 +256,13 @@ int mp_bluetooth_gattc_write(uint16_t conn_handle, uint16_t value_handle, const 
 
 // Initiate MTU exchange for a specific connection using the preferred MTU.
 int mp_bluetooth_gattc_exchange_mtu(uint16_t conn_handle);
+
+// Register for notify
+int mp_bluetooth_gattc_register_for_notify(uint16_t conn_handle, uint16_t value_handle);
+
+// Unregister for notify
+int mp_bluetooth_gattc_unregister_for_notify(uint16_t conn_handle, uint16_t value_handle);
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
