@@ -204,7 +204,11 @@ typedef struct _mp_state_vm_t {
     #endif
     #endif
 
-    //
+    #if MICROPY_PY_AUDIO
+    mp_obj_t audio_i2s;
+    mp_obj_t audio_i2s_config; //< dict containing all audio/i2s config settings
+    #endif
+
     // END ROOT POINTER SECTION
     ////////////////////////////////////////////////////////////
 

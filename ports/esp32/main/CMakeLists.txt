@@ -11,7 +11,8 @@ include(${MICROPY_DIR}/extmod/extmod.cmake)
 
 #=========================================================================
 set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE 
-    MICROPY_PY_BTLITE=1
+    #MICROPY_PY_BTLITE=1
+    MICROPY_PY_AUDIO=1
     MICROPY_PY_BLUETOOTH=1
     MICROPY_BLUETOOTH_ESP32=1
     MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE=1 # gatts
@@ -19,20 +20,22 @@ set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE
 )
 
 set(MICROPY_INCLUDES_MP_REGISTER_MODULE 
-    ${MICROPY_DIR}/../custom_source/btlite
+    #${MICROPY_DIR}/../custom_source/btlite
 )
 
 set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} 
     # bluetooth 'lite'
-    ${MICROPY_DIR}/../custom_source/btlite/modbtlite.c
-    ${MICROPY_DIR}/../custom_source/btlite/hal_btlite.h
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.h
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.c
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/hal_btlite.c
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.h
-    ${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.c
+    #${MICROPY_DIR}/../custom_source/btlite/modbtlite.c
+    #${MICROPY_DIR}/../custom_source/btlite/hal_btlite.h
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.h
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/ble_ancs.c
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/hal_btlite.c
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.h
+    #${MICROPY_DIR}/../custom_source/btlite/esp32/bt_a2dp.c
     #${MICROPY_DIR}/../custom_source/btlite/esp32/ble.hpp
     #${MICROPY_DIR}/../custom_source/btlite/esp32/ble.cpp
+    #audio
+    ${MICROPY_DIR}/../custom_source/audio/modaudio.c
     
     #bluetooth
     ${MICROPY_DIR}/extmod/modbluetooth.c
@@ -86,7 +89,7 @@ set(MICROPY_SOURCE_PORT
     ${PROJECT_DIR}/machine_pwm.c
     ${PROJECT_DIR}/machine_uart.c
     ${PROJECT_DIR}/modmachine.c
-    #${PROJECT_DIR}/modnetwork.c
+    ${PROJECT_DIR}/modnetwork.c
     #${PROJECT_DIR}/network_lan.c
     #${PROJECT_DIR}/network_ppp.c
     ${PROJECT_DIR}/mpnimbleport.c

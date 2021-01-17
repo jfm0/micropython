@@ -162,7 +162,6 @@
 #define MICROPY_PY_FRAMEBUF                 (1)
 #define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
 #define MICROPY_PY_BLUETOOTH_RANDOM_ADDR    (1)
-#define MICROPY_PY_BLUETOOTH_DEFAULT_GAP_NAME ("ESP32")
 
 #define MICROPY_PY_LVGL                     (1)
 //#define MICROPY_PY_ESPIDF                   (1)
@@ -246,7 +245,7 @@ extern void lv_deinit(void);
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&mp_module_usocket }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&mp_module_network }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&mp_module_network },  \
     { MP_OBJ_NEW_QSTR(MP_QSTR__onewire), (mp_obj_t)&mp_module_onewire }, \
     /*{ MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib },*/ \
     MICROPY_PORT_LVGL_DEF \
