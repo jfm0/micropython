@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #ifdef _WIN32
-#define STDERR_FILENO stderr
+#define STDERR_FILENO  _fileno(stderr)
 #else
 #include <unistd.h>
 #endif

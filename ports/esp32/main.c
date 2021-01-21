@@ -64,7 +64,7 @@
 
 // MicroPython runs as a task under FreeRTOS
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
-#define MP_TASK_STACK_SIZE      (16 * 1024)
+#define MP_TASK_STACK_SIZE      (24 * 1024)
 
 int vprintf_null(const char *format, va_list ap) {
     // do nothing: this is used as a log target during raw repl mode
@@ -79,6 +79,7 @@ void mp_task(void *pvParameter) {
     uart_init();
 
     printf("%d\n", __LINE__);
+    heap_caps_print_heap_info(MALLOC_CAP_DMA);
     heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
     heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
     size_t spiram_size = esp_spiram_get_size();

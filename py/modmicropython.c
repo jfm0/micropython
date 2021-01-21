@@ -87,6 +87,9 @@ mp_obj_t mp_micropython_mem_info(size_t n_args, const mp_obj_t *args) {
     #else
     (void)n_args;
     #endif
+    heap_caps_print_heap_info(MALLOC_CAP_DMA);
+    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_micropython_mem_info_obj, 0, 1, mp_micropython_mem_info);
