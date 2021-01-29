@@ -31,6 +31,9 @@
 #include "py/runtime.h"
 #include "py/gc.h"
 #include "py/mphal.h"
+#ifdef MICROPY_ESP_IDF_4
+#include "freertos/task.h"
+#endif
 
 // Various builtins specific to MicroPython runtime,
 // living in micropython module
@@ -87,9 +90,32 @@ mp_obj_t mp_micropython_mem_info(size_t n_args, const mp_obj_t *args) {
     #else
     (void)n_args;
     #endif
+    //printf("uxTaskGetStackHighWaterMark=%d:\n", uxTaskGetStackHighWaterMark(NULL));
+#ifdef MICROPY_ESP_IDF_4
+#if configUSE_TRACE_FACILITY
+    static char task_trace_buf[1024];
+#define MAX_TASK_COUNT (50)
+    static TaskStatus_t pxTaskStatusArray[MAX_TASK_COUNT];
+    UBaseType_t uxArraySize = uxTaskGetSystemState( pxTaskStatusArray, MAX_TASK_COUNT, NULL );
+    char *pcWriteBuffer = task_trace_buf;
+
+    for( int i = 0; i < uxArraySize; i++ )
+    {
+        int written = sprintf(pcWriteBuffer, "%s\t%c\t%u\t%u\t%u\r\n",
+                              pxTaskStatusArray[i].pcTaskName,
+                              pxTaskStatusArray[i].eCurrentState,
+                              ( unsigned int ) pxTaskStatusArray[i].uxCurrentPriority,
+                              ( unsigned int ) pxTaskStatusArray[i].usStackHighWaterMark,
+                              ( unsigned int ) pxTaskStatusArray[i].xTaskNumber );
+
+        pcWriteBuffer += written;
+    }
+    printf(task_trace_buf);
+#endif
     heap_caps_print_heap_info(MALLOC_CAP_DMA);
     heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
     heap_caps_print_heap_info(MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#endif
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_micropython_mem_info_obj, 0, 1, mp_micropython_mem_info);

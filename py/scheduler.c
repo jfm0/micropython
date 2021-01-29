@@ -43,6 +43,10 @@ void MICROPY_WRAP_MP_KEYBOARD_INTERRUPT(mp_keyboard_interrupt)(void) {
 
 #if MICROPY_ENABLE_SCHEDULER
 
+#ifdef MICROPY_ESP_IDF_4
+portMUX_TYPE sched_mutex = portMUX_INITIALIZER_UNLOCKED;
+#endif
+
 #define IDX_MASK(i) ((i) & (MICROPY_SCHEDULER_DEPTH - 1))
 
 // This is a macro so it is guaranteed to be inlined in functions like

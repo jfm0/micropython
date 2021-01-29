@@ -60,6 +60,7 @@
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
 #define MICROPY_VFS                         (1)
+#define MICROPY_ENABLE_PYSTACK              (1)
 
 // control over Python builtins
 #define MICROPY_PY_FUNCTION_ATTRS           (1)
@@ -291,8 +292,14 @@ void *esp_native_code_commit(void *, size_t, void *);
 // the only disable interrupts on the current CPU.  To full manage exclusion
 // one should use portENTER_CRITICAL/portEXIT_CRITICAL instead.
 #include "freertos/FreeRTOS.h"
-#define MICROPY_BEGIN_ATOMIC_SECTION() portENTER_CRITICAL_NESTED()
-#define MICROPY_END_ATOMIC_SECTION(state) portEXIT_CRITICAL_NESTED(state)
+//#define MICROPY_BEGIN_ATOMIC_SECTION() portENTER_CRITICAL_NESTED()
+//#define MICROPY_END_ATOMIC_SECTION(state) portEXIT_CRITICAL_NESTED(state)
+#ifdef MICROPY_ESP_IDF_4
+extern portMUX_TYPE sched_mutex;
+#define MICROPY_BEGIN_ATOMIC_SECTION() (portENTER_CRITICAL(&sched_mutex), 0)
+#define MICROPY_END_ATOMIC_SECTION(x) portEXIT_CRITICAL(&sched_mutex)
+#endif
+
 
 #if MICROPY_PY_USOCKET_EVENTS
 #define MICROPY_PY_USOCKET_EVENTS_HANDLER extern void usocket_events_handler(void); usocket_events_handler();
