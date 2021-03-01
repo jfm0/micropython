@@ -831,6 +831,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(bluetooth_ble_gattc_unregister_for_notify_obj, 
 
 #endif // MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE
 
+#if MICROPY_PY_BLUETOOTH_CLASSIC
+
+STATIC mp_obj_t bluetooth_ble_audio_cmd(mp_obj_t self_in, mp_obj_t conn_handle_in, mp_obj_t value_handle_in) {
+    (void)self_in;
+    mp_int_t conn_handle = mp_obj_get_int(conn_handle_in);
+    mp_int_t value_handle = mp_obj_get_int(value_handle_in);
+
+    int err = mp_bluetooth_audio_cmd(conn_handle, value_handle);
+    return bluetooth_handle_errno(err);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(bluetooth_ble_audio_cmd_obj, bluetooth_ble_audio_cmd);
+
+#endif // MICROPY_PY_BLUETOOTH_CLASSIC
+
 // ----------------------------------------------------------------------------
 // Bluetooth object: Definition
 // ----------------------------------------------------------------------------
@@ -865,6 +879,9 @@ STATIC const mp_rom_map_elem_t bluetooth_ble_locals_dict_table[] = {
     #if MICROPY_BLUETOOTH_ESP32
     { MP_ROM_QSTR(MP_QSTR_gattc_register_for_notify), MP_ROM_PTR(&bluetooth_ble_gattc_register_for_notify_obj) },
     { MP_ROM_QSTR(MP_QSTR_gattc_unregister_for_notify), MP_ROM_PTR(&bluetooth_ble_gattc_unregister_for_notify_obj) },
+    #endif
+    #if MICROPY_PY_BLUETOOTH_CLASSIC
+    { MP_ROM_QSTR(MP_QSTR_audio_cmd), MP_ROM_PTR(&bluetooth_ble_audio_cmd_obj) },
     #endif
     #endif
 };
@@ -1002,6 +1019,11 @@ STATIC mp_obj_t bluetooth_ble_invoke_irq(mp_obj_t none_in) {
             // conn_handle, value_handle, status
             ringbuf_extract(&o->ringbuf, data_tuple, 3, 0, NULL, 0, NULL, NULL);
         #endif // MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE
+        #if MICROPY_PY_BLUETOOTH_CLASSIC
+        } else if (event >= _MP_BLUETOOTH_IRQ_CLASSIC_START && event <= _MP_BLUETOOTH_IRQ_CLASSIC_END) {
+            // conn_handle, arg
+            ringbuf_extract(&o->ringbuf, data_tuple, 3, 0, NULL, 0, NULL, NULL);
+        #endif // MICROPY_PY_BLUETOOTH_CLASSIC
         }
 
         MICROPY_PY_BLUETOOTH_EXIT
@@ -1259,6 +1281,18 @@ void mp_bluetooth_gatts_on_mtu_exchanged(uint16_t conn_handle, uint16_t value) {
     schedule_ringbuf(atomic_state);
 }
 
+void mp_bluetooth_on_audio_event(uint8_t event, uint16_t conn_handle, uint16_t arg0, uint16_t arg1) {
+    MICROPY_PY_BLUETOOTH_ENTER
+    mp_obj_bluetooth_ble_t *o = MP_OBJ_TO_PTR(MP_STATE_VM(bluetooth));
+    if (enqueue_irq(o, 2 + 2 + 2, event)) {
+        ringbuf_put16(&o->ringbuf, conn_handle);
+        ringbuf_put16(&o->ringbuf, arg0);
+        ringbuf_put16(&o->ringbuf, arg1);
+    }
+    schedule_ringbuf(atomic_state);
+}
+
+#ifndef MICROPY_BLUETOOTH_ESP32
 void mp_bluetooth_gatts_db_create_entry(mp_gatts_db_t db, uint16_t handle, size_t len) {
     mp_map_elem_t *elem = mp_map_lookup(db, MP_OBJ_NEW_SMALL_INT(handle), MP_MAP_LOOKUP_ADD_IF_NOT_FOUND);
     mp_bluetooth_gatts_db_entry_t *entry = m_new(mp_bluetooth_gatts_db_entry_t, 1);
@@ -1331,5 +1365,6 @@ int mp_bluetooth_gatts_db_resize(mp_gatts_db_t db, uint16_t handle, size_t len, 
     MICROPY_PY_BLUETOOTH_EXIT
     return entry ? 0 : MP_EINVAL;
 }
+#endif //MICROPY_BLUETOOTH_ESP32
 
 #endif // MICROPY_PY_BLUETOOTH

@@ -43,6 +43,10 @@
 #define MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE (0)
 #endif
 
+#ifndef MICROPY_PY_BLUETOOTH_CLASSIC
+#define MICROPY_PY_BLUETOOTH_CLASSIC (0)
+#endif
+
 #ifndef MICROPY_PY_BLUETOOTH_GATTS_ON_READ_CALLBACK
 #define MICROPY_PY_BLUETOOTH_GATTS_ON_READ_CALLBACK (0)
 #endif
@@ -101,6 +105,15 @@
 #define MP_BLUETOOTH_IRQ_GATTC_INDICATE                 (19)
 #define MP_BLUETOOTH_IRQ_GATTS_INDICATE_DONE            (20)
 #define MP_BLUETOOTH_IRQ_MTU_EXCHANGED                  (21)
+
+#if MICROPY_PY_BLUETOOTH_CLASSIC
+#define _MP_BLUETOOTH_IRQ_CLASSIC_START                (100)
+#define _MP_BLUETOOTH_IRQ_CLASSIC_END                  (110)
+#define MP_BLUETOOTH_IRQ_A2DP_STARTED                  (100)
+#define MP_BLUETOOTH_IRQ_A2DP_STOPPED                  (101)
+#define MP_BLUETOOTH_IRQ_HF_STARTED                    (102)
+#define MP_BLUETOOTH_IRQ_HF_STOPPED                    (103)
+#endif
 
 #define MP_BLUETOOTH_ADDRESS_MODE_PUBLIC (0)
 #define MP_BLUETOOTH_ADDRESS_MODE_RANDOM (1)
@@ -264,6 +277,13 @@ int mp_bluetooth_gattc_register_for_notify(uint16_t conn_handle, uint16_t value_
 int mp_bluetooth_gattc_unregister_for_notify(uint16_t conn_handle, uint16_t value_handle);
 
 #endif
+#if MICROPY_PY_BLUETOOTH_CLASSIC
+void mp_bluetooth_on_audio_event(uint8_t event, uint16_t conn_handle, uint16_t arg0, uint16_t arg1);
+enum {
+    BT_AUDIO_CMD_HF_ANSWER_CALL = 0,
+};
+int mp_bluetooth_audio_cmd(uint16_t conn_handle, uint16_t command);
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // API implemented by modbluetooth (called by port-specific implementations):
@@ -315,6 +335,7 @@ void mp_bluetooth_gattc_on_data_available_end(mp_uint_t atomic_state);
 void mp_bluetooth_gattc_on_read_write_status(uint8_t event, uint16_t conn_handle, uint16_t value_handle, uint16_t status);
 #endif
 
+#ifndef MICROPY_BLUETOOTH_ESP32
 // For stacks that don't manage attribute value data (currently all of them), helpers
 // to store this in a map, keyed by value handle.
 
@@ -344,5 +365,6 @@ mp_bluetooth_gatts_db_entry_t *mp_bluetooth_gatts_db_lookup(mp_gatts_db_t db, ui
 int mp_bluetooth_gatts_db_read(mp_gatts_db_t db, uint16_t handle, uint8_t **value, size_t *value_len);
 int mp_bluetooth_gatts_db_write(mp_gatts_db_t db, uint16_t handle, const uint8_t *value, size_t value_len);
 int mp_bluetooth_gatts_db_resize(mp_gatts_db_t db, uint16_t handle, size_t len, bool append);
+#endif
 
 #endif // MICROPY_INCLUDED_EXTMOD_MODBLUETOOTH_H
