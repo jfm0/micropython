@@ -38,6 +38,7 @@
 #include "extmod/virtpin.h"
 #include "machine_rtc.h"
 #include "modesp32.h"
+#include "soc/rtc_io_reg.h"
 
 // Used to implement a range of pull capabilities
 #define GPIO_PULL_DOWN (1)
@@ -149,6 +150,22 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
     // parse args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    // need to call gpio_config because it will call rtc_gpio_deinit for relevant pins
+    {
+        gpio_config_t config = {0};
+        config.pin_bit_mask = (1ULL<<self->id);
+        if (args[ARG_mode].u_obj != mp_const_none) {
+            config.mode = mp_obj_get_int(args[ARG_mode].u_obj);
+        }
+        esp_err_t err = gpio_config(&config);
+        if(err) {
+            mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("gpio_config err %d"), err);
+        }
+
+        /* gpio33 route to digital io_mux */
+        REG_CLR_BIT(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL);
+    }
 
     // configure the pin for gpio
     gpio_pad_select_gpio(self->id);

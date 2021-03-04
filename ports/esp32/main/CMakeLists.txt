@@ -20,6 +20,7 @@ set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE
 )
 
 set(MICROPY_INCLUDES_MP_REGISTER_MODULE 
+    ${MICROPY_DIR}/../custom_source
     #${MICROPY_DIR}/../custom_source/btlite
 )
 
@@ -42,6 +43,10 @@ set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE}
     ${MICROPY_DIR}/extmod/modbluetooth.h
     ${MICROPY_DIR}/../custom_source/bluetooth_esp32/modbluetooth_esp32.h
     ${MICROPY_DIR}/../custom_source/bluetooth_esp32/modbluetooth_esp32.c
+    
+    #neopixel ws2812
+    ${MICROPY_DIR}/../custom_source/neopixel/neopixel_ws2812.h
+    ${MICROPY_DIR}/../custom_source/neopixel/neopixel_ws2812.c
     )
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA
@@ -64,6 +69,7 @@ set(MICROPY_SOURCE_LIB
     ${MICROPY_DIR}/lib/utils/stdout_helpers.c
     ${MICROPY_DIR}/lib/utils/sys_stdio_mphal.c
     ${MICROPY_DIR}/lib/utils/pyexec.c
+    ${MICROPY_DIR}/lib/utils/printf.c
 )
 
 set(MICROPY_SOURCE_DRIVERS
@@ -481,6 +487,8 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
     MICROPY_VFS_FAT=1
     MICROPY_VFS_LFS2=1
     FFCONF_H=\"${MICROPY_OOFATFS_DIR}/ffconf.h\"
+    # LFS2_YES_TRACE
+    # doesn't work? configUSE_TRACE_FACILITY configUSE_STATS_FORMATTING_FUNCTIONS # for vTaskList
     LFS1_NO_MALLOC LFS1_NO_DEBUG LFS1_NO_WARN LFS1_NO_ERROR LFS1_NO_ASSERT
     LFS2_NO_MALLOC LFS2_NO_DEBUG LFS2_NO_WARN LFS2_NO_ERROR LFS2_NO_ASSERT
     ${MICROPY_DEFINITIONS_MP_REGISTER_MODULE}

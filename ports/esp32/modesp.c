@@ -40,6 +40,7 @@
 #include "py/mphal.h"
 #include "drivers/dht/dht.h"
 #include "modesp.h"
+#include "neopixel/neopixel_ws2812.h"
 
 STATIC mp_obj_t esp_osdebug(size_t n_args, const mp_obj_t *args) {
     esp_log_level_t level = LOG_LOCAL_LEVEL;
@@ -118,8 +119,16 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(esp_gpio_matrix_out_obj, 4, 4, esp_gp
 STATIC mp_obj_t esp_neopixel_write_(mp_obj_t pin, mp_obj_t buf, mp_obj_t timing) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf, &bufinfo, MP_BUFFER_READ);
+#if 0
     esp_neopixel_write(mp_hal_get_pin_obj(pin),
         (uint8_t *)bufinfo.buf, bufinfo.len, mp_obj_get_int(timing));
+#else
+    int ret = rmt_esp_neopixel_write(mp_hal_get_pin_obj(pin),
+                (uint8_t *)bufinfo.buf, bufinfo.len, mp_obj_get_int(timing));
+    if(ret) {
+        mp_raise_OSError(ret);
+    }
+#endif
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(esp_neopixel_write_obj, esp_neopixel_write_);
