@@ -64,7 +64,7 @@
 
 // MicroPython runs as a task under FreeRTOS
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
-#define MP_TASK_STACK_SIZE      (24 * 1024)
+#define MP_TASK_STACK_SIZE      (14 * 1024)
 
 int vprintf_null(const char *format, va_list ap) {
     // do nothing: this is used as a log target during raw repl mode
@@ -125,6 +125,11 @@ soft_reset:
     mp_stack_set_top((void *)sp);
     mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
     gc_init(mp_task_heap, mp_task_heap + mp_task_heap_size);
+#if MICROPY_ENABLE_PYSTACK
+#define MICROPY_PYSTACK_SIZE 1024
+    static mp_obj_t pystack[MICROPY_PYSTACK_SIZE];
+    mp_pystack_init(pystack, &pystack[MICROPY_PYSTACK_SIZE]);
+#endif
     mp_init();
     mp_obj_list_init(mp_sys_path, 0);
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
@@ -189,6 +194,7 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 void esp_alloc_failed_hook(size_t size, uint32_t caps, const char * function_name)
 {
     printf("esp_alloc_failed_hook(%d, 0x%x, %s)\n", size, caps, function_name);
+    heap_caps_print_heap_info(caps);
     *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
 }
 

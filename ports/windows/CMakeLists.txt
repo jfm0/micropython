@@ -69,22 +69,17 @@ target_compile_definitions(${MICROPY_TARGET} PUBLIC
 
 set(MICROPY_DEFINITIONS_MP_REGISTER_MODULE 
     #MICROPY_PY_EXAMPLE=1
-    MICROPY_PY_FULL_EXAMPLE=1
-    MICROPY_PY_BTLITE=1
+    #MICROPY_PY_FULL_EXAMPLE=1
 )
 
 set(MICROPY_INCLUDES_MP_REGISTER_MODULE 
-    ${MICROPY_DIR}/../custom_source/btlite
+    #${MICROPY_DIR}/../custom_source/full_example
 )
 
 set(MICROPY_SOURCE_MP_REGISTER_MODULE ${MICROPY_SOURCE_MP_REGISTER_MODULE} 
     #${MICROPY_DIR}/../micropython-extmod-generator/example/modexample.c
-    # bluetooth 'lite'
-    ${MICROPY_DIR}/../custom_source/btlite/modbtlite.c
-    ${MICROPY_DIR}/../custom_source/btlite/hal_btlite.h
-    ${MICROPY_DIR}/../custom_source/btlite/windows/hal_btlite.c
     ####
-    ${MICROPY_DIR}/../custom_source/full_example/modfull_example.c
+    #${MICROPY_DIR}/../custom_source/full_example/modfull_example.c
 )
 
 set(MICROPY_SOURCE_EXTMOD_EXTRA
